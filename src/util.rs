@@ -7,13 +7,14 @@ use std::path::PathBuf;
 use log::{debug, error, info};
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct AnilistToken {
-    pub token_type: String,
-    pub expires_in: i32,
-    pub access_token: String,
-    pub refresh_token: String,
+pub struct AnilistToken<'a> {
+    token_type: &'a str,
+    expires_in: i32,
+    pub access_token: &'a str,
+    refresh_token: &'a str,
 }
 
+// have to use String here because of how Confy serdes the structs
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct MendoConfig {
     pub id: i32,
