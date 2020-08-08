@@ -1,8 +1,0 @@
-query User {
-  Viewer {
-    id
-    name
-    siteUrl
-    updatedAt
-  }
-}
