@@ -4,7 +4,7 @@ use reqwest::{self, StatusCode};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::io;
-use tokio::fs;
+//use tokio::fs;
 
 use chrono::{Local, Utc};
 use fern::colors::{Color, ColoredLevelConfig};
@@ -12,7 +12,7 @@ use log::{debug, error, info, warn, LevelFilter};
 
 mod anilist;
 mod util;
-use anilist::oauth;
+use anilist::{oauth, query};
 use util::*;
 
 const PROGRAM_NAME: &str = "mendo";
@@ -161,11 +161,10 @@ async fn main() -> Result<()> {
     let token = mendo_cfg.token;
     info!("Token from config file loaded. Let's get to work!");
 
-    let content = fs::read_to_string("graphql/query_user.gql").await?;
-
+    //let content = fs::read_to_string("graphql/query_user.gql").await?;
     //let var = json!({ "id": 84994881, "progress": 109});
     //let query = json!({ "query": content, "variables": var });
-    let query = json!({ "query": content });
+    let query = json!({ "query": query::QUERY_USER });
 
     let client = reqwest::Client::new();
     debug!("Sending POST request...");
