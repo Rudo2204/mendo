@@ -72,23 +72,13 @@ pub fn create_proj_conf(qualifier: &str, organization: &str, application: &str) 
         .expect("Could not retrieve ProjectDirs, maybe you are using an unsupported OS");
     let conf_dir = proj_dirs.config_dir();
 
-    match conf_dir.exists() && conf_dir.join(format!("{}.yml", &application)).exists() {
-        true => {
-            error!("This statement should never be reached!");
-            info!(
-                "{} configuration file exists. Will use these values...",
-                capitalize_word(&application)
-            );
-        }
-        false => {
-            info!(
-                "{} configuration file does not exist. I will now create a configuration file at {}",
-                capitalize_word(&application),
-                conf_dir.display()
-            );
-            confy::store(&application, MendoConfig::default())?;
-        }
-    }
+    debug!(
+        "{} configuration file does not exist. I will now create a configuration file at {}",
+        capitalize_word(&application),
+        conf_dir.display()
+    );
+    confy::store(&application, MendoConfig::default())?;
+    debug!("Default config file saved.");
 
     Ok(())
 }
