@@ -1,2 +1,2 @@
-pub mod anilist;
 pub mod oauth;
+pub mod query;
