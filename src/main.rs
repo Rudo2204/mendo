@@ -191,6 +191,13 @@ async fn main() -> Result<()> {
             error!("Too many requests!");
             return Err(anyhow!("Too many requests!"));
         }
+        StatusCode::BAD_REQUEST => {
+            error!("400 Bad Request!");
+            return Err(anyhow!(
+                "Bad Request! Recheck your config file at {}",
+                conf_file.display()
+            ));
+        }
         StatusCode::UNAUTHORIZED => {
             debug!("Deleting the existing token to force user to reauth...");
             confy::store(
