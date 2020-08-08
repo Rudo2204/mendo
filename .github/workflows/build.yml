@@ -98,18 +98,18 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
-        CRATE_NAME: [mendo]
         # Can also use this section to pass args depending on the running os, see 2nd link!
+        # TODO: Change the name here
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            bin: target/release/${{ matrix.CRATE_NAME }}
+            bin: target/release/mendo
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            bin: target/release/${{ matrix.CRATE_NAME }}.exe
+            bin: target/release/mendo.exe
           - os: macOS-latest
             target: x86_64-apple-darwin
-            bin: target/release/${{ matrix.CRATE_NAME }}
+            bin: target/release/mendo
 
     steps:
       - name: Set CRATE_NAME
