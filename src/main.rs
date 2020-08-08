@@ -192,6 +192,21 @@ async fn main() -> Result<()> {
             error!("Too many requests!");
             return Err(anyhow!("Too many requests!"));
         }
+        StatusCode::UNAUTHORIZED => {
+            debug!("Deleting the existing token to force user to reauth...");
+            confy::store(
+                PROGRAM_NAME,
+                MendoConfig {
+                    id: mendo_cfg.id,
+                    secret: mendo_cfg.secret,
+                    name: mendo_cfg.name,
+                    url: mendo_cfg.url,
+                    token: "Leave this field.".to_string(),
+                },
+            )?;
+            error!("Unthorized! Run the program again to reauthorize!");
+            return Err(anyhow!("Unthorized! Run the program again to reauthorize!"));
+        }
         StatusCode::NOT_FOUND => {
             error!("Anilist returned code `404 Not Found'!");
             return Err(anyhow!("Anilist returned code `404 Not Found'!"));
