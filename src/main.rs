@@ -133,6 +133,7 @@ async fn main() -> Result<()> {
     info!("Token from config file is valid. Let's get to work!");
 
     request::query_user(&mut mendo_cfg).await?;
+    request::query_media_list(&mut mendo_cfg, 212862, anilist::model::MediaType::Manga).await?;
 
     debug!("-----Everything is finished!-----");
     Ok(())

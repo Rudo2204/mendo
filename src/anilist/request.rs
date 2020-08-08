@@ -1,12 +1,12 @@
 use anyhow::{anyhow, Result};
-use log::{debug, error, info};
+use log::{debug, error, info, trace};
 use reqwest::{Client, StatusCode};
 use serde::{de::DeserializeOwned, Deserialize};
 use serde_json::{json, Map, Value};
 use tokio::time;
 
-use super::model::{MediaListCollection, User};
-use super::query::QUERY_USER;
+use super::model::{MediaListCollection, MediaType, User};
+use super::query::{QUERY_LIBRARY, QUERY_USER};
 use crate::util::MendoConfig;
 use crate::PROGRAM_NAME;
 
@@ -57,6 +57,7 @@ where
     for _ in 0..local_rate_limit_count {
         let client = Client::new();
         debug!("Sending POST request...");
+        trace!("query = {}", query);
         let res = client
             .post(ANILIST_API_URL)
             .header("ContentType", "application/json")
@@ -82,6 +83,9 @@ where
                 time::delay_for(time::Duration::from_secs(secs)).await;
             }
             StatusCode::UNAUTHORIZED => {
+                error!("Error: Unthorized!");
+                let response: QueryResponse<R> = res.json().await?;
+                trace!("Response =\n{:#?}", response);
                 debug!("Deleting the existing token to force user to reauth...");
                 confy::store(
                     PROGRAM_NAME,
@@ -93,12 +97,11 @@ where
                         token: "Leave this field.".to_string(),
                     },
                 )?;
-                error!("Unthorized! Run the program again to reauthorize!");
                 return Err(anyhow!("Unthorized! Run the program again to reauthorize!"));
             }
             StatusCode::OK | _ => {
                 let response: QueryResponse<R> = res.json().await?;
-                debug!("Response=\n{:#?}", response);
+                trace!("Response =\n{:#?}", response);
                 info!("Request is handled by Anilist!");
                 return Ok(response);
             }
@@ -116,6 +119,25 @@ where
 }
 
 pub async fn query_user(cfg: &mut MendoConfig) -> Result<QueryResponse<ViewerResponse>> {
-    debug!("Querying currently authenticated user...");
+    info!("Querying currently authenticated user...");
     query_graphql(QUERY_USER, &None, cfg).await
+}
+
+pub async fn query_media_list(
+    cfg: &mut MendoConfig,
+    user_id: i32,
+    media_type: MediaType,
+) -> Result<QueryResponse<MediaListCollectionResponse>> {
+    let variables = json!({
+        "userId": user_id,
+        "type": media_type,
+    });
+
+    if let serde_json::Value::Object(variables) = variables {
+        info!("Querying media list (manga only) of user...");
+        query_graphql(QUERY_LIBRARY, &Some(variables), cfg).await
+    } else {
+        error!("Media list query variables is not a json object");
+        Err(anyhow!("Media list query variables is not a json object"))
+    }
 }
