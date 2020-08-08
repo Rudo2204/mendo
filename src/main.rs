@@ -129,7 +129,6 @@ async fn main() -> Result<()> {
         println!("Starting authorization process...");
         let res_token = oauth::auth(&mut mendo_cfg).await?;
         mendo_cfg = util::cfg_save_token(PROGRAM_NAME, &mut mendo_cfg, &res_token)?;
-        info!("Token is saved to config file!");
     }
     info!("Token from config file is valid. Let's get to work!");
 
