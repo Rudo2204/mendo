@@ -83,7 +83,6 @@ jobs:
           override: true
 
       - uses: actions-rs/cargo@v1
-          CRATE_NAME: ${{ steps.set_crate_name.outputs.CRATE_NAME }}
         with:
           command: check
           args: --manifest-path ${{ steps.set_crate_name.outputs.CRATE_NAME }}/Cargo.toml --bin ${{ steps.set_crate_name.outputs.CRATE_NAME }} --locked
