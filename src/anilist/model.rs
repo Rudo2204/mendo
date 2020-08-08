@@ -59,3 +59,10 @@ pub struct MediaListGroup {
 pub struct MediaListCollection {
     pub lists: Option<Vec<Option<MediaListGroup>>>,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum MediaType {
+    Anime,
+    Manga,
+}
