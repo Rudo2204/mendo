@@ -1,54 +1,28 @@
 # https://github.com/rust-lang/rust/blob/master/.github/workflows/ci.yml
 # https://github.com/launchbadge/sqlx/blob/master/.github/workflows/sqlx.yml
 # https://github.com/dh1tw/remoteAudio/blob/master/.github/workflows/build.yml
+# https://github.com/actions-rs
 # TODO: Set CRATE_NAME to match the project name
+# TODO: Add `test` and more if you need to.
+# TODO: Change bin to lib or both if you build a library
 name: mendo
 
 on:
   push:
     branches:
       - master
+    tags:
+      - 'v*' # matches v0.2, v1.0, v2.15.23, ect.
   pull_request:
-    branches:
-      - "**"
 
 jobs:
-  format:
+  lints:
     if: "!contains(github.event.head_commit.message, 'ci skip')"
-    name: Format
+    name: Lints
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v2
-
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - run: rustup component add rustfmt
-
-      - uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check --verbose
-
-  test:
-    if: "!contains(github.event.head_commit.message, 'ci skip') && contains(github.event.head_commit.message, 'ci test')"
-    name: Unit Test
-
-    steps:
-      - name: Set CRATE_NAME
-        id: set_crate_name
-        run: echo ::set-output name=CRATE_NAME::mendo
-
-      - uses: actions/checkout@v2
-
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
 
       - uses: actions/cache@v2
         with:
@@ -56,14 +30,30 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ runner.os }}-test-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-lints-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-lints-
 
-      - uses: actions-rs/cargo@v1
-        env:
-          CRATE_NAME: ${{ steps.set_crate_name.outputs.CRATE_NAME }}
+      - uses: actions-rs/toolchain@v1
         with:
-          command: test
-          args: --manifest-path $CRATE_NAME/Cargo.toml
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
+
+      - name: Run cargo fmt
+        uses: actions-rs/cargo@v1
+        continue-on-error: false
+        with:
+          command: fmt
+          args: --all -- --check
+
+      - name: Run cargo clippy
+        uses: actions-rs/cargo@v1
+        continue-on-error: false
+        with:
+          command: clippy
+          args: -- -D warnings
 
   check:
     if: "!contains(github.event.head_commit.message, 'ci skip')"
@@ -76,13 +66,6 @@ jobs:
 
       - uses: actions/checkout@v2
 
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          target: ${{ matrix.target }}
-          override: true
-
       - uses: actions/cache@v2
         with:
           path: |
@@ -90,30 +73,38 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-check-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-check-
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
 
       - uses: actions-rs/cargo@v1
         env:
           CRATE_NAME: ${{ steps.set_crate_name.outputs.CRATE_NAME }}
         with:
-          command: build
-          args: --manifest-path $CRATE_NAME/Cargo.toml --bin $CRATE_NAME
+          command: check
+          args: --manifest-path $CRATE_NAME/Cargo.toml --bin $CRATE_NAME --locked
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    name: release
-    runs-on: ubuntu-latest
+    needs: check
+    name: Release
+    runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
-        # Basically include only tier 1 platforms
-        # can also specific OS args for each of these targets. See 2nd link.
+        # Can also use this section to pass args depending on the running os, see 2nd link!
         include:
           - os: ubuntu-latest
-            target: [x86_64-unknown-linux-gnu, i686-unknown-linux-gnu]
+            target: x86_64-unknown-linux-gnu
             bin: target/release/${{ steps.set_crate_name.outputs.CRATE_NAME }}
           - os: windows-latest
-            target: [x86_64-pc-windows-msvc, x86_64-pc-windows-gnu, i686-pc-windows-msvc, i686-pc-windows-gnu]
+            target: x86_64-pc-windows-msvc
             bin: target/release/${{ steps.set_crate_name.outputs.CRATE_NAME }}.exe
           - os: macOS-latest
             target: x86_64-apple-darwin
@@ -130,13 +121,6 @@ jobs:
 
       - uses: actions/checkout@v2
 
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          target: ${{ matrix.target }}
-          override: true
-
       - uses: actions/cache@v2
         with:
           path: |
@@ -144,13 +128,29 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-release-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-release-
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          target: ${{ matrix.target }}
+          override: true
 
       - uses: actions-rs/cargo@v1
         env:
           CRATE_NAME: ${{ steps.set_crate_name.outputs.CRATE_NAME }}
         with:
+          use-cross: true
           command: build
-          args: --release --manifest-path $CRATE_NAME/Cargo.toml --bin $CRATE_NAME
+          args: --manifest-path $CRATE_NAME/Cargo.toml --bin $CRATE_NAME --release --locked
+
+      - uses: svenstaro/upx-action@2.0.1
+        with:
+          file: ${{ matrix.bin }}
+          args: --best
+          strip: true
 
       - uses: edgarrc/action-7z@v1.0.4
         env:
