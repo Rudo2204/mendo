@@ -15,6 +15,7 @@ mod util;
 use anilist::oauth;
 use util::*;
 
+const PROGRAM_NAME: &str = "mendo";
 const ANILIST_API_URL: &str = "https://graphql.anilist.co";
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -118,7 +119,7 @@ fn setup_logging(verbosity: u64) -> Result<()> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let cmd_arguments = App::new("mendo")
+    let cmd_arguments = App::new(PROGRAM_NAME)
         .arg(
             Arg::with_name("verbose")
                 .short("v")
@@ -132,12 +133,12 @@ async fn main() -> Result<()> {
     setup_logging(verbosity)?;
     debug!("-----Logger is initialized. Starting main program!-----");
 
-    let conf_file = util::get_conf_dir("", "", "mendo")?;
+    let conf_file = util::get_conf_dir("", "", PROGRAM_NAME)?;
     while !conf_file.exists() {
-        util::create_proj_conf("", "", "mendo")?;
+        util::create_proj_conf("", "", PROGRAM_NAME)?;
     }
 
-    let mut mendo_cfg: MendoConfig = confy::load("mendo")?;
+    let mut mendo_cfg: MendoConfig = confy::load(PROGRAM_NAME)?;
     debug!("Config file loaded. Checking for auth status...");
 
     // TODO: Better auth checking
@@ -154,7 +155,7 @@ async fn main() -> Result<()> {
         warn!("Access token is invalid. Starting authorization process...");
         println!("Starting authorization process...");
         let res_token = oauth::auth(&mut mendo_cfg).await?;
-        mendo_cfg = util::cfg_save_token("mendo", &mut mendo_cfg, &res_token)?;
+        mendo_cfg = util::cfg_save_token(PROGRAM_NAME, &mut mendo_cfg, &res_token)?;
         info!("Token is saved to config file!");
     }
     let token = mendo_cfg.token;
