@@ -1,5 +1,4 @@
 use anyhow::Result;
-use confy;
 use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -77,7 +76,7 @@ pub fn create_proj_conf(qualifier: &str, organization: &str, application: &str) 
 }
 
 pub fn access_token_is_valid(cfg: &mut MendoConfig) -> Result<bool> {
-    if cfg.token == String::from("Leave this field.") {
+    if cfg.token == "Leave this field." {
         Ok(false)
     } else {
         Ok(true)
@@ -85,10 +84,7 @@ pub fn access_token_is_valid(cfg: &mut MendoConfig) -> Result<bool> {
 }
 
 pub fn ready_to_auth(cfg: &mut MendoConfig) -> Result<bool> {
-    if cfg.id == 0
-        || cfg.secret == String::from("Edit this!")
-        || cfg.name == String::from("Edit this!")
-    {
+    if cfg.id == 0 || cfg.secret == "Edit this!" || cfg.name == "Edit this!" {
         Ok(false)
     } else {
         Ok(true)

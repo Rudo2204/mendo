@@ -1,7 +1,6 @@
 use anyhow::{anyhow, Result};
 use log::{error, info};
 use oauth2::{AuthorizationCode, CsrfToken};
-use open;
 use std::collections::HashMap;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpListener;
@@ -38,60 +37,58 @@ pub async fn auth(cfg: &mut MendoConfig) -> Result<String> {
 
     //Naive way to implement the redirect server
     let mut listener = TcpListener::bind("127.0.0.1:8080").await.unwrap();
-    loop {
-        if let Ok((mut stream, _)) = listener.accept().await {
-            info!("OK! Found stream!");
+    if let Ok((mut stream, _)) = listener.accept().await {
+        info!("OK! Found stream!");
 
-            let code;
-            {
-                let mut reader = BufReader::new(&mut stream);
-                let mut request_line = String::new();
+        let code;
+        {
+            let mut reader = BufReader::new(&mut stream);
+            let mut request_line = String::new();
 
-                reader.read_line(&mut request_line).await?;
-                let redirect_url = request_line.split_whitespace().nth(1).unwrap();
-                let url = Url::parse(&format!("http://localhost{}", redirect_url))?;
+            reader.read_line(&mut request_line).await?;
+            let redirect_url = request_line.split_whitespace().nth(1).unwrap();
+            let url = Url::parse(&format!("http://localhost{}", redirect_url))?;
 
-                let code_pair = url
-                    .query_pairs()
-                    .find(|pair| {
-                        let &(ref key, _) = pair;
-                        key == "code"
-                    })
-                    .expect("Something went wrong in the authorization process!");
+            let code_pair = url
+                .query_pairs()
+                .find(|pair| {
+                    let &(ref key, _) = pair;
+                    key == "code"
+                })
+                .expect("Something went wrong in the authorization process!");
 
-                let (_, value) = code_pair;
-                code = AuthorizationCode::new(value.into_owned());
-                // It also returns urlState, but we don't care about it.
-            }
-
-            post_json.insert("code", &code.secret());
-
-            let message = "Finished. Return to your terminal!";
-            let response = format!(
-                "HTTP/1.1 200 OK\r\ncontent-length: {}\r\n\r\n{}",
-                message.len(),
-                message
-            );
-            stream.write_all(response.as_bytes()).await?;
-
-            info!("Anilist returned the following code:\n{}\n", code.secret());
-            info!("Now will exchange it for access token...");
-
-            let client = reqwest::Client::new();
-            let token_res = client
-                .post("https://anilist.co/api/v2/oauth/token")
-                .header("Accept", "application/json")
-                .json(&post_json)
-                .send()
-                .await?
-                .text()
-                .await?;
-
-            info!("Anilist returned the following token:\n{}\n", token_res);
-            return Ok(token_res);
-        } else {
-            error!("Could not find stream !?");
-            return Err(anyhow!("Something went wrong trying to authorize!"));
+            let (_, value) = code_pair;
+            code = AuthorizationCode::new(value.into_owned());
+            // It also returns urlState, but we don't care about it.
         }
+
+        post_json.insert("code", &code.secret());
+
+        let message = "Finished. Return to your terminal!";
+        let response = format!(
+            "HTTP/1.1 200 OK\r\ncontent-length: {}\r\n\r\n{}",
+            message.len(),
+            message
+        );
+        stream.write_all(response.as_bytes()).await?;
+
+        info!("Anilist returned the following code:\n{}\n", code.secret());
+        info!("Now will exchange it for access token...");
+
+        let client = reqwest::Client::new();
+        let token_res = client
+            .post("https://anilist.co/api/v2/oauth/token")
+            .header("Accept", "application/json")
+            .json(&post_json)
+            .send()
+            .await?
+            .text()
+            .await?;
+
+        info!("Anilist returned the following token:\n{}\n", token_res);
+        Ok(token_res)
+    } else {
+        error!("Could not find stream !?");
+        Err(anyhow!("Something went wrong trying to authorize!"))
     }
 }
