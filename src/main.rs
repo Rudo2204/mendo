@@ -13,7 +13,7 @@ use log::{debug, error, info, warn, LevelFilter};
 mod anilist;
 mod util;
 use anilist::{oauth, query};
-use util::*;
+use util::MendoConfig;
 
 const PROGRAM_NAME: &str = "mendo";
 const ANILIST_API_URL: &str = "https://graphql.anilist.co";
