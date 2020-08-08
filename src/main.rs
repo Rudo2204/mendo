@@ -37,6 +37,8 @@ fn setup_logging(verbosity: u64) -> Result<()> {
     };
 
     // Separate file config so we can include year, month and day (UTC format) in file logs
+    let log_file_path =
+        util::get_data_dir("", "", PROGRAM_NAME)?.join(format!("{}.log", PROGRAM_NAME));
     let file_config = fern::Dispatch::new()
         .format(move |out, message, record| {
             out.finish(format_args!(
@@ -55,7 +57,7 @@ fn setup_logging(verbosity: u64) -> Result<()> {
                 ),
             ))
         })
-        .chain(fern::log_file("program.log")?);
+        .chain(fern::log_file(log_file_path.into_os_string())?);
 
     // For stdout output we will just output local %H:%M:%S
     let stdout_config = fern::Dispatch::new()
@@ -99,6 +101,8 @@ async fn main() -> Result<()> {
         .get_matches();
 
     let verbosity: u64 = cmd_arguments.occurrences_of("verbose");
+
+    util::create_data_dir(util::get_data_dir("", "", PROGRAM_NAME)?).await?;
     setup_logging(verbosity)?;
     debug!("-----Logger is initialized. Starting main program!-----");
 
