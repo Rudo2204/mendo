@@ -118,6 +118,6 @@ pub fn cfg_save_token(
     };
     confy::store(&application, cfg_with_token.clone())?;
 
-    info!("Configuration with access token is saved! Let's get to work!");
+    info!("Configuration with access token is saved!");
     Ok(cfg_with_token)
 }
