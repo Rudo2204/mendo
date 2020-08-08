@@ -6,10 +6,10 @@ use std::path::PathBuf;
 use log::{debug, error, info};
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct AnilistToken<'a> {
+struct AnilistToken<'a> {
     token_type: &'a str,
     expires_in: i32,
-    pub access_token: &'a str,
+    access_token: &'a str,
     refresh_token: &'a str,
 }
 
