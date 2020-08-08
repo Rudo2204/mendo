@@ -98,17 +98,18 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
+        CRATE_NAME: [mendo]
         # Can also use this section to pass args depending on the running os, see 2nd link!
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            bin: target/release/${{ steps.set_crate_name.outputs.CRATE_NAME }}
+            bin: target/release/${{ matrix.CRATE_NAME }}
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            bin: target/release/${{ steps.set_crate_name.outputs.CRATE_NAME }}.exe
+            bin: target/release/${{ matrix.CRATE_NAME }}.exe
           - os: macOS-latest
             target: x86_64-apple-darwin
-            bin: target/release/${{ steps.set_crate_name.outputs.CRATE_NAME }}
+            bin: target/release/${{ matrix.CRATE_NAME }}
 
     steps:
       - name: Set CRATE_NAME
