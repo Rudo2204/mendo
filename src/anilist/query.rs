@@ -21,6 +21,7 @@ query ($userId: Int, $type: MediaType) {
         mediaId
         status
         progress
+        progressVolumes
         media {
           title {
             romaji
