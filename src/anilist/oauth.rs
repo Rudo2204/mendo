@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use log::{error, info};
+use log::{debug, error, info};
 use oauth2::{AuthorizationCode, CsrfToken};
 use std::collections::HashMap;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -30,7 +30,7 @@ pub async fn auth(cfg: &mut MendoConfig) -> Result<String> {
     post_json.insert("client_secret", &client_secret);
     post_json.insert("redirect_uri", &redirect_uri);
 
-    info!("Setup ready. Attempting to open browser...");
+    debug!("Setup ready. Attempting to open browser...");
     println!("Opening browser to authorize...");
 
     open::that(url.to_string())?;
@@ -38,7 +38,7 @@ pub async fn auth(cfg: &mut MendoConfig) -> Result<String> {
     //Naive way to implement the redirect server
     let mut listener = TcpListener::bind("127.0.0.1:8080").await.unwrap();
     if let Ok((mut stream, _)) = listener.accept().await {
-        info!("OK! Found stream!");
+        debug!("OK! Found stream!");
 
         let code;
         {
@@ -72,8 +72,8 @@ pub async fn auth(cfg: &mut MendoConfig) -> Result<String> {
         );
         stream.write_all(response.as_bytes()).await?;
 
-        info!("Anilist returned the following code:\n{}\n", code.secret());
-        info!("Now will exchange it for access token...");
+        debug!("Anilist returned the following code:\n{}\n", code.secret());
+        debug!("Now will exchange it for access token...");
 
         let client = reqwest::Client::new();
         let token_res = client
@@ -85,7 +85,8 @@ pub async fn auth(cfg: &mut MendoConfig) -> Result<String> {
             .text()
             .await?;
 
-        info!("Anilist returned the following token:\n{}\n", token_res);
+        debug!("Anilist returned the following token:\n{}\n", token_res);
+        info!("Successfully authenticated the user!");
         Ok(token_res)
     } else {
         error!("Could not find stream !?");
