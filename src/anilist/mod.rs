@@ -1,3 +1,2 @@
+pub mod anilist;
 pub mod oauth;
-
-pub use oauth::*;
