@@ -3,7 +3,7 @@ use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-use log::{debug, error, info};
+use log::{debug, info};
 
 #[derive(Serialize, Deserialize, Debug)]
 struct AnilistToken<'a> {
@@ -90,8 +90,10 @@ pub fn cfg_save_token(
 ) -> Result<MendoConfig> {
     let anilist_token: AnilistToken = serde_json::from_str(&res_token)?;
     debug!("Deserialized anilist token:\n{:#?}\n", anilist_token);
+
     let client_secret = &cfg.secret;
     let client_name = &cfg.name;
+
     let cfg_with_token = MendoConfig {
         id: cfg.id,
         secret: client_secret.to_string(),
@@ -100,7 +102,7 @@ pub fn cfg_save_token(
         token: anilist_token.access_token.to_string(),
     };
     confy::store(&application, cfg_with_token.clone())?;
-    info!("Configuration with access token is saved! Let's get to work!");
 
+    info!("Configuration with access token is saved! Let's get to work!");
     Ok(cfg_with_token)
 }
