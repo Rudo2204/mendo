@@ -9,7 +9,7 @@ query {
 }
 ";
 
-pub const GET_LIBRARY: &str = "
+pub const QUERY_LIBRARY: &str = "
 query ($userId: Int, $type: MediaType) {
   MediaListCollection(userId: $userId, type: $type) {
     lists {
