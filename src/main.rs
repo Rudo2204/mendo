@@ -142,7 +142,7 @@ async fn main() -> Result<()> {
     debug!("Config file loaded. Checking for auth status...");
 
     // TODO: Better auth checking
-    if !util::ready_to_auth(&mut mendo_cfg)? {
+    if !mendo_cfg.ready_to_auth() {
         println!(
             "You need to edit information in the config file first before we can authorize you."
         );
@@ -151,7 +151,7 @@ async fn main() -> Result<()> {
         return Err(anyhow!(
             "One or more fields in conf file has not been edited!"
         ));
-    } else if !util::access_token_is_valid(&mut mendo_cfg)? {
+    } else if !mendo_cfg.access_token_is_valid() {
         warn!("Access token is invalid. Starting authorization process...");
         println!("Starting authorization process...");
         let res_token = oauth::auth(&mut mendo_cfg).await?;

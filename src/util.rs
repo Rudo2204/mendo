@@ -35,6 +35,24 @@ impl Default for MendoConfig {
     }
 }
 
+impl MendoConfig {
+    pub fn access_token_is_valid(&mut self) -> bool {
+        if self.token == "Leave this field." {
+            false
+        } else {
+            true
+        }
+    }
+
+    pub fn ready_to_auth(&mut self) -> bool {
+        if self.id == 0 || self.secret == "Edit this!" || self.name == "Edit this!" {
+            false
+        } else {
+            true
+        }
+    }
+}
+
 fn capitalize_word(s: &str) -> String {
     let mut c = s.chars();
     match c.next() {
@@ -73,22 +91,6 @@ pub fn create_proj_conf(qualifier: &str, organization: &str, application: &str) 
     }
 
     Ok(())
-}
-
-pub fn access_token_is_valid(cfg: &mut MendoConfig) -> Result<bool> {
-    if cfg.token == "Leave this field." {
-        Ok(false)
-    } else {
-        Ok(true)
-    }
-}
-
-pub fn ready_to_auth(cfg: &mut MendoConfig) -> Result<bool> {
-    if cfg.id == 0 || cfg.secret == "Edit this!" || cfg.name == "Edit this!" {
-        Ok(false)
-    } else {
-        Ok(true)
-    }
 }
 
 pub fn cfg_save_token(
