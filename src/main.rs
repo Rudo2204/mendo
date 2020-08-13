@@ -26,14 +26,14 @@ fn setup_logging(verbosity: u64) -> Result<()> {
     base_config = match verbosity {
         0 => base_config
             .level(LevelFilter::Info)
-            .level_for("mendo", LevelFilter::Warn),
+            .level_for(PROGRAM_NAME, LevelFilter::Warn),
         1 => base_config
             .level(LevelFilter::Info)
-            .level_for("mendo", LevelFilter::Info),
+            .level_for(PROGRAM_NAME, LevelFilter::Info),
         2 => base_config
             .level(LevelFilter::Info)
-            .level_for("mendo", LevelFilter::Debug),
-        _3_or_more => base_config.level(LevelFilter::Debug),
+            .level_for(PROGRAM_NAME, LevelFilter::Debug),
+        _3_or_more => base_config.level(LevelFilter::Trace),
     };
 
     // Separate file config so we can include year, month and day (UTC format) in file logs
