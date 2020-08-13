@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use log::{debug, error, info, trace};
+use log::{debug, error, info};
 use reqwest::{blocking::Client, StatusCode};
 use serde::{de::DeserializeOwned, Deserialize};
 use serde_json::{json, Map, Value};
@@ -62,8 +62,7 @@ where
 
     for _ in 0..local_rate_limit_count {
         let client = Client::new();
-        debug!("Sending POST request...");
-        trace!("query = {}", query);
+        debug!("Sending POST request with query = \n{:#?}", query);
         let res = client
             .post(ANILIST_API_URL)
             .header("ContentType", "application/json")
@@ -73,10 +72,10 @@ where
             .send()?;
 
         let res_status = res.status();
-        debug!("Anilist returned code `{}'", res.status());
 
         match res_status {
             StatusCode::TOO_MANY_REQUESTS => {
+                debug!("Anilist returned code `{}'", res_status);
                 let secs;
                 let retry = res.headers().get("Retry-After");
                 if let Some(val) = retry {
@@ -88,9 +87,9 @@ where
                 thread::sleep(time::Duration::from_secs(secs));
             }
             StatusCode::UNAUTHORIZED => {
-                error!("Error: Unthorized!");
+                error!("Anilist returned code `{}'. Unauthorized!", res_status);
                 let response: QueryResponse<R> = res.json()?;
-                trace!("Response =\n{:#?}", response);
+                debug!("Response =\n{:#?}", response);
                 debug!("Deleting the existing token to force user to reauth...");
                 confy::store(
                     PROGRAM_NAME,
@@ -104,11 +103,17 @@ where
                 )?;
                 return Err(anyhow!("Unthorized! Run the program again to reauthorize!"));
             }
-            StatusCode::OK | _ => {
+            StatusCode::OK => {
+                info!("Anilist returned `{}'!", res.status());
                 let response: QueryResponse<R> = res.json()?;
-                trace!("Response =\n{:#?}", response);
-                info!("Request is handled by Anilist!");
+                debug!("Response =\n{:#?}", response);
                 return Ok(response);
+            }
+            _ => {
+                error!("Anilist returned an unimplemented code `{}'!", res_status);
+                let response: QueryResponse<R> = res.json()?;
+                debug!("Response =\n{:#?}", response);
+                return Err(anyhow!("Anilist returned an unimplemented response code!"));
             }
         }
     }
