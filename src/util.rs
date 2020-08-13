@@ -73,10 +73,10 @@ pub fn get_data_dir(qualifier: &str, organization: &str, application: &str) -> R
     Ok(proj_dirs.data_dir().to_path_buf())
 }
 
-pub async fn create_data_dir(data_dir: PathBuf) -> Result<()> {
+pub fn create_data_dir(data_dir: PathBuf) -> Result<()> {
     if !data_dir.exists() {
         debug!("Project data dir does not exist, creating them...");
-        tokio::fs::create_dir_all(data_dir).await?;
+        std::fs::create_dir_all(data_dir)?;
         debug!("Successfully created data dirs");
     }
     Ok(())

@@ -88,8 +88,7 @@ fn setup_logging(verbosity: u64) -> Result<()> {
     Ok(())
 }
 
-#[tokio::main]
-async fn main() -> Result<()> {
+fn main() -> Result<()> {
     let cmd_arguments = App::new(PROGRAM_NAME)
         .arg(
             Arg::with_name("verbose")
@@ -102,7 +101,7 @@ async fn main() -> Result<()> {
 
     let verbosity: u64 = cmd_arguments.occurrences_of("verbose");
 
-    util::create_data_dir(util::get_data_dir("", "", PROGRAM_NAME)?).await?;
+    util::create_data_dir(util::get_data_dir("", "", PROGRAM_NAME)?)?;
     setup_logging(verbosity)?;
     debug!("-----Logger is initialized. Starting main program!-----");
 
@@ -127,13 +126,13 @@ async fn main() -> Result<()> {
     } else if !mendo_cfg.access_token_is_valid() {
         warn!("Access token is invalid. Starting authorization process...");
         println!("Starting authorization process...");
-        let res_token = oauth::auth(&mut mendo_cfg).await?;
+        let res_token = oauth::auth(&mut mendo_cfg)?;
         mendo_cfg = util::cfg_save_token(PROGRAM_NAME, &mut mendo_cfg, &res_token)?;
     }
     info!("Token from config file is valid. Let's get to work!");
 
-    request::query_user(&mut mendo_cfg).await?;
-    request::query_media_list(&mut mendo_cfg, 212862, anilist::model::MediaType::Manga).await?;
+    request::query_user(&mut mendo_cfg)?;
+    request::query_media_list(&mut mendo_cfg, 212862, anilist::model::MediaType::Manga)?;
 
     debug!("-----Everything is finished!-----");
     Ok(())

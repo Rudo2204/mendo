@@ -2,13 +2,13 @@ use anyhow::{anyhow, Result};
 use log::{debug, error, info};
 use oauth2::{AuthorizationCode, CsrfToken};
 use std::collections::HashMap;
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use tokio::net::TcpListener;
+use std::io::{BufRead, BufReader, Write};
+use std::net::TcpListener;
 use url::Url;
 
 use crate::util::MendoConfig;
 
-pub async fn auth(cfg: &mut MendoConfig) -> Result<String> {
+pub fn auth(cfg: &mut MendoConfig) -> Result<String> {
     let client_id = &cfg.id.to_string();
     let client_secret = &cfg.secret;
     let redirect_uri = &cfg.url;
@@ -36,8 +36,8 @@ pub async fn auth(cfg: &mut MendoConfig) -> Result<String> {
     open::that(url.to_string())?;
 
     //Naive way to implement the redirect server
-    let mut listener = TcpListener::bind("127.0.0.1:8080").await.unwrap();
-    if let Ok((mut stream, _)) = listener.accept().await {
+    let listener = TcpListener::bind("127.0.0.1:8080")?;
+    if let Ok((mut stream, _)) = listener.accept() {
         debug!("OK! Found stream!");
 
         let code;
@@ -45,7 +45,7 @@ pub async fn auth(cfg: &mut MendoConfig) -> Result<String> {
             let mut reader = BufReader::new(&mut stream);
             let mut request_line = String::new();
 
-            reader.read_line(&mut request_line).await?;
+            reader.read_line(&mut request_line)?;
             let redirect_url = request_line.split_whitespace().nth(1).unwrap();
             let url = Url::parse(&format!("http://localhost{}", redirect_url))?;
 
@@ -70,20 +70,18 @@ pub async fn auth(cfg: &mut MendoConfig) -> Result<String> {
             message.len(),
             message
         );
-        stream.write_all(response.as_bytes()).await?;
+        stream.write_all(response.as_bytes())?;
 
         debug!("Anilist returned the following code:\n{}\n", code.secret());
         debug!("Now will exchange it for access token...");
 
-        let client = reqwest::Client::new();
+        let client = reqwest::blocking::Client::new();
         let token_res = client
             .post("https://anilist.co/api/v2/oauth/token")
             .header("Accept", "application/json")
             .json(&post_json)
-            .send()
-            .await?
-            .text()
-            .await?;
+            .send()?
+            .text()?;
 
         debug!("Anilist returned the following token:\n{}\n", token_res);
         info!("Successfully authenticated the user!");
