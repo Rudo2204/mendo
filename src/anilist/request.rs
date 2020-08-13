@@ -5,8 +5,8 @@ use serde::{de::DeserializeOwned, Deserialize};
 use serde_json::{json, Map, Value};
 use std::{thread, time};
 
-use super::model::{MediaListCollection, MediaType, User};
-use super::query::{QUERY_LIBRARY, QUERY_USER};
+use super::model::{Media, MediaList, MediaListStatus, MediaStatus, MediaType, User};
+use super::query::{QUERY_MEDIA_LIST, QUERY_USER, SEARCH_MEDIA};
 use crate::util::MendoConfig;
 use crate::PROGRAM_NAME;
 
@@ -27,13 +27,19 @@ pub struct QueryResponse<R> {
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
 pub struct ViewerResponse {
-    pub viewer: Option<User>,
+    pub viewer: User,
 }
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
-pub struct MediaListCollectionResponse {
-    pub media_list_collection: Option<Box<MediaListCollection>>,
+pub struct MediaResponse {
+    pub media: Media,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "PascalCase")]
+pub struct MediaListResponse {
+    pub media_list: MediaList,
 }
 
 pub fn query_graphql<R>(
@@ -122,19 +128,48 @@ pub fn query_user(cfg: &mut MendoConfig) -> Result<QueryResponse<ViewerResponse>
     query_graphql(QUERY_USER, &None, cfg)
 }
 
-pub fn query_media_list(
+pub fn search_media(
     cfg: &mut MendoConfig,
-    user_id: i32,
+    search_string: &str,
     media_type: MediaType,
-) -> Result<QueryResponse<MediaListCollectionResponse>> {
+) -> Result<QueryResponse<MediaResponse>> {
     let variables = json!({
-        "userId": user_id,
+        "search": search_string,
         "type": media_type,
+        "status_not": MediaStatus::NotYetReleased,
     });
 
     if let serde_json::Value::Object(variables) = variables {
-        info!("Querying media list (manga only) of user...");
-        query_graphql(QUERY_LIBRARY, &Some(variables), cfg)
+        info!(
+            "Searching Media using name: {}, type: {:?}...",
+            search_string, media_type
+        );
+        query_graphql(SEARCH_MEDIA, &Some(variables), cfg)
+    } else {
+        error!("Media list query variables is not a json object");
+        Err(anyhow!("Media list query variables is not a json object"))
+    }
+}
+
+pub fn query_media_list(
+    cfg: &mut MendoConfig,
+    user_id: i32,
+    media_id: i32,
+    media_type: MediaType,
+) -> Result<QueryResponse<MediaListResponse>> {
+    let variables = json!({
+        "userId": user_id,
+        "mediaId": media_id,
+        "type": media_type,
+        "status_not": MediaListStatus::Dropped,
+    });
+
+    if let serde_json::Value::Object(variables) = variables {
+        info!(
+            "Querying MediaList for progress using media ID: {}, type: {:?} of user...",
+            media_id, media_type
+        );
+        query_graphql(QUERY_MEDIA_LIST, &Some(variables), cfg)
     } else {
         error!("Media list query variables is not a json object");
         Err(anyhow!("Media list query variables is not a json object"))

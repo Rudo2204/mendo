@@ -20,7 +20,28 @@ pub struct MediaTitle {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Media {
-    pub title: Option<MediaTitle>,
+    pub id: i32,
+    pub status: MediaStatus,
+    pub title: MediaTitle,
+    pub synonyms: Vec<String>,
+    pub chapters: Option<i32>,
+    pub volumes: Option<i32>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct MediaList {
+    pub id: i32,
+    pub status: MediaListStatus,
+    pub progress: Option<i32>,
+    pub progress_volumes: Option<i32>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum MediaType {
+    Anime,
+    Manga,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -35,34 +56,11 @@ pub enum MediaListStatus {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct MediaList {
-    pub id: i32,
-    media_id: i32,
-    pub status: Option<MediaListStatus>,
-    pub progress: i32,
-    pub progress_volumes: i32,
-    pub media: Option<Media>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct MediaListGroup {
-    pub name: Option<String>,
-    pub status: Option<MediaListStatus>,
-    pub is_custom_list: Option<bool>,
-    pub entries: Option<Vec<Option<MediaList>>>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct MediaListCollection {
-    pub lists: Option<Vec<Option<MediaListGroup>>>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum MediaType {
-    Anime,
-    Manga,
+pub enum MediaStatus {
+    Finished,
+    Releasing,
+    #[serde(rename = "NOT_YET_RELEASED")]
+    NotYetReleased,
+    Cancelled,
 }

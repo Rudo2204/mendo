@@ -9,30 +9,32 @@ query {
 }
 ";
 
-pub const QUERY_LIBRARY: &str = "
-query ($userId: Int, $type: MediaType) {
-  MediaListCollection(userId: $userId, type: $type) {
-    lists {
-      name
-      status
-      isCustomList
-      entries {
+pub const SEARCH_MEDIA: &str = "
+query ($search: String, $type: MediaType, $status_not: MediaStatus) {
+    Media(search: $search, type: $type, status_not: $status_not) {
         id
-        mediaId
         status
-        progress
-        progressVolumes
-        media {
-          title {
+        title {
             romaji
             english
             native
             userPreferred
-          }
         }
-      }
+        synonyms
+        chapters
+        volumes
     }
-  }
+}
+";
+
+pub const QUERY_MEDIA_LIST: &str = "
+query ($userId: Int, $mediaId: Int, $type: MediaType, $status_not: MediaListStatus) {
+    MediaList(userId: $userId, mediaId: $mediaId, type: $type, status_not: $status_not) {
+        id
+        status
+        progress
+        progressVolumes
+    }
 }
 ";
 
