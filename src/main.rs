@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use clap::{App, Arg};
+use clap::{crate_authors, crate_description, crate_version, App, Arg};
 use std::io;
 
 use chrono::{Local, Utc};
@@ -89,17 +89,25 @@ fn setup_logging(verbosity: u64) -> Result<()> {
 }
 
 fn main() -> Result<()> {
-    let cmd_arguments = App::new(PROGRAM_NAME)
+    let matches = App::new(PROGRAM_NAME)
+        .version(crate_version!())
+        .author(crate_authors!())
+        .about(crate_description!())
+        .arg(
+            Arg::with_name("filename")
+                .help("the filename of manga archive")
+                .takes_value(true)
+                .required(true),
+        )
         .arg(
             Arg::with_name("verbose")
                 .short("v")
                 .long("verbose")
                 .multiple(true)
-                .help("Increases debug verbosity"),
+                .help("Sets the level of debug information verbosity"),
         )
         .get_matches();
-
-    let verbosity: u64 = cmd_arguments.occurrences_of("verbose");
+    let verbosity: u64 = matches.occurrences_of("verbose");
     let data_dir = util::get_data_dir("", "", PROGRAM_NAME)?;
 
     util::create_data_dir(&data_dir)?;
