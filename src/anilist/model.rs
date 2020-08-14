@@ -1,4 +1,10 @@
+use anyhow::Result;
+use log::debug;
 use serde::{Deserialize, Serialize};
+use std::fs::File;
+use std::io::Write;
+use std::path::PathBuf;
+use yaml_rust::{YamlEmitter, YamlLoader};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -7,6 +13,23 @@ pub struct User {
     name: String,
     site_url: String,
     updated_at: i64, // unix timestamp
+}
+
+impl User {
+    pub fn dump_user_info(&self, path: &PathBuf) -> Result<()> {
+        let s = serde_yaml::to_string(&self)?;
+        let docs = YamlLoader::load_from_str(&s)?;
+        let doc = &docs[0];
+        let mut out_str = String::new();
+        {
+            let mut emitter = YamlEmitter::new(&mut out_str);
+            emitter.dump(doc)?;
+        }
+        let mut output = File::create(path)?;
+        write!(output, "{}", out_str)?;
+        debug!("User profile dumped to {}", path.display());
+        Ok(())
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

@@ -949,7 +949,9 @@ dependencies = [
  "reqwest 0.10.7",
  "serde",
  "serde_json",
+ "serde_yaml",
  "url 2.1.1",
+ "yaml-rust",
 ]
 
 [[package]]

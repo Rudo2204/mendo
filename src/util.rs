@@ -1,9 +1,12 @@
 use anyhow::Result;
 use directories::ProjectDirs;
+use log::{debug, info};
 use serde::{Deserialize, Serialize};
+use std::fs;
 use std::path::PathBuf;
 
-use log::{debug, info};
+use crate::anilist::model::User;
+use crate::anilist::request;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct AnilistToken<'a> {
@@ -73,7 +76,7 @@ pub fn get_data_dir(qualifier: &str, organization: &str, application: &str) -> R
     Ok(proj_dirs.data_dir().to_path_buf())
 }
 
-pub fn create_data_dir(data_dir: PathBuf) -> Result<()> {
+pub fn create_data_dir(data_dir: &PathBuf) -> Result<()> {
     if !data_dir.exists() {
         debug!("Project data dir does not exist, creating them...");
         std::fs::create_dir_all(data_dir)?;
@@ -120,4 +123,19 @@ pub fn cfg_save_token(
 
     info!("Configuration with access token is saved!");
     Ok(cfg_with_token)
+}
+
+pub fn get_user_id(mut cfg: &mut MendoConfig, data_dir: &PathBuf) -> Result<i32> {
+    let user_profile_path = data_dir.join("user.yml");
+    if !user_profile_path.exists() {
+        debug!("Local user profile does not exist. Querying to create one...");
+        let result = request::query_user(&mut cfg)?;
+        if let Some(viewer_resp) = result.data {
+            viewer_resp.viewer.dump_user_info(&user_profile_path)?;
+        }
+    }
+    debug!("Loading user profile...");
+    let s = fs::read_to_string(&user_profile_path)?;
+    let user: User = serde_yaml::from_str(&s)?;
+    Ok(user.id)
 }

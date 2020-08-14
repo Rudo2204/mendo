@@ -21,6 +21,8 @@ log = "0.4"
 fern = { version = "0.6", features = ["colored"] }
 clap = "2.33"
 chrono = "0.4"
+yaml-rust = "0.4.4"
+serde_yaml = "0.8.13"
 
 [profile.release]
 lto = true
