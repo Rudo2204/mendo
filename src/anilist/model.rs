@@ -20,7 +20,8 @@ pub struct MediaTitle {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Media {
-    pub id: i32,
+    #[serde(rename(deserialize = "id"))]
+    pub media_id: i32,
     pub status: MediaStatus,
     pub title: MediaTitle,
     pub synonyms: Vec<String>,
@@ -63,4 +64,34 @@ pub enum MediaStatus {
     #[serde(rename = "NOT_YET_RELEASED")]
     NotYetReleased,
     Cancelled,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct QueryError {
+    pub message: Option<String>,
+    pub status: Option<i32>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct QueryResponse<R> {
+    pub data: Option<R>,
+    pub errors: Option<Vec<QueryError>>,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "PascalCase")]
+pub struct ViewerResponse {
+    pub viewer: User,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "PascalCase")]
+pub struct MediaResponse {
+    pub media: Media,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "PascalCase")]
+pub struct MediaListResponse {
+    pub media_list: MediaList,
 }

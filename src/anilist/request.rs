@@ -1,46 +1,19 @@
 use anyhow::{anyhow, Result};
 use log::{debug, error, info};
 use reqwest::{blocking::Client, StatusCode};
-use serde::{de::DeserializeOwned, Deserialize};
+use serde::de::DeserializeOwned;
 use serde_json::{json, Map, Value};
 use std::{thread, time};
 
-use super::model::{Media, MediaList, MediaListStatus, MediaStatus, MediaType, User};
+use super::model::{
+    MediaListResponse, MediaListStatus, MediaResponse, MediaStatus, MediaType, QueryResponse,
+    ViewerResponse,
+};
 use super::query::{QUERY_MEDIA_LIST, QUERY_USER, SEARCH_MEDIA};
 use crate::util::MendoConfig;
 use crate::PROGRAM_NAME;
 
 const ANILIST_API_URL: &str = "https://graphql.anilist.co";
-
-#[derive(Deserialize, Debug)]
-pub struct QueryError {
-    pub message: Option<String>,
-    pub status: Option<i32>,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct QueryResponse<R> {
-    pub data: Option<R>,
-    pub errors: Option<Vec<QueryError>>,
-}
-
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "PascalCase")]
-pub struct ViewerResponse {
-    pub viewer: User,
-}
-
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "PascalCase")]
-pub struct MediaResponse {
-    pub media: Media,
-}
-
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "PascalCase")]
-pub struct MediaListResponse {
-    pub media_list: MediaList,
-}
 
 pub fn query_graphql<R>(
     query_str: &str,
@@ -76,14 +49,13 @@ where
         match res_status {
             StatusCode::TOO_MANY_REQUESTS => {
                 debug!("Anilist returned code `{}'", res_status);
-                let secs;
                 let retry = res.headers().get("Retry-After");
-                if let Some(val) = retry {
+                let secs = if let Some(val) = retry {
                     let header = String::from_utf8_lossy(val.as_bytes());
-                    secs = header.parse::<u64>().unwrap_or(60);
+                    header.parse::<u64>().unwrap_or(60)
                 } else {
-                    secs = 60;
-                }
+                    60
+                };
                 thread::sleep(time::Duration::from_secs(secs));
             }
             StatusCode::UNAUTHORIZED => {
@@ -129,7 +101,7 @@ where
 }
 
 pub fn query_user(cfg: &mut MendoConfig) -> Result<QueryResponse<ViewerResponse>> {
-    info!("Querying currently authenticated user...");
+    info!("Querying for info of currently authenticated user...");
     query_graphql(QUERY_USER, &None, cfg)
 }
 
