@@ -100,8 +100,9 @@ fn main() -> Result<()> {
         .get_matches();
 
     let verbosity: u64 = cmd_arguments.occurrences_of("verbose");
+    let data_dir = util::get_data_dir("", "", PROGRAM_NAME)?;
 
-    util::create_data_dir(util::get_data_dir("", "", PROGRAM_NAME)?)?;
+    util::create_data_dir(&data_dir)?;
     setup_logging(verbosity)?;
     debug!("-----Logger is initialized. Starting main program!-----");
 
@@ -130,9 +131,7 @@ fn main() -> Result<()> {
         mendo_cfg = util::cfg_save_token(PROGRAM_NAME, &mut mendo_cfg, &res_token)?;
     }
     info!("Token from config file is valid. Let's get to work!");
-
-    request::query_user(&mut mendo_cfg)?;
-    request::query_media_list(&mut mendo_cfg, 212862, anilist::model::MediaType::Manga)?;
+    let user_id = util::get_user_id(&mut mendo_cfg, &data_dir)?;
 
     debug!("-----Everything is finished!-----");
     Ok(())
