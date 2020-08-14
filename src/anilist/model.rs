@@ -1,7 +1,7 @@
 use anyhow::Result;
 use log::debug;
 use serde::{Deserialize, Serialize};
-use std::fs::File;
+use std::fs::{File, OpenOptions};
 use std::io::Write;
 use std::path::PathBuf;
 use yaml_rust::{YamlEmitter, YamlLoader};
@@ -50,6 +50,23 @@ pub struct Media {
     pub synonyms: Vec<String>,
     pub chapters: Option<i32>,
     pub volumes: Option<i32>,
+}
+
+impl Media {
+    pub fn append_local_data(&self, path: &PathBuf) -> Result<()> {
+        let mut file = OpenOptions::new().append(true).open(&path)?;
+        let data = format!(
+            "{} - mediaId: {}",
+            &self.title.english.as_ref().unwrap(),
+            self.media_id
+        );
+        writeln!(file, "{}", data)?;
+        debug!(
+            "Appended received data to local media data at {}",
+            &path.display()
+        );
+        Ok(())
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
