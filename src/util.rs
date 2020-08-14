@@ -1,11 +1,12 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use directories::ProjectDirs;
-use log::{debug, info};
+use log::{debug, error, info};
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 
-use crate::anilist::model::User;
+use crate::anilist::model::{MediaType, User};
 use crate::anilist::request;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -129,13 +130,69 @@ pub fn get_user_id(mut cfg: &mut MendoConfig, data_dir: &PathBuf) -> Result<i32>
     let user_profile_path = data_dir.join("user.yml");
     if !user_profile_path.exists() {
         debug!("Local user profile does not exist. Querying to create one...");
-        let result = request::query_user(&mut cfg)?;
-        if let Some(viewer_resp) = result.data {
+        let query_result = request::query_user(&mut cfg)?;
+        if let Some(viewer_resp) = query_result.data {
             viewer_resp.viewer.dump_user_info(&user_profile_path)?;
         }
     }
     debug!("Loading user profile...");
     let s = fs::read_to_string(&user_profile_path)?;
     let user: User = serde_yaml::from_str(&s)?;
-    Ok(user.id)
+    let user_id = user.id;
+    debug!("Got user_id {} of authenticated user!", user_id);
+    Ok(user_id)
+}
+
+pub fn get_media_id(mut cfg: &mut MendoConfig, data_dir: &PathBuf, filename: &str) -> Result<i32> {
+    let local_media_data = data_dir.join("media_data.txt");
+    let name_re = Regex::new(r"^(.*) v?\d+")?;
+    let caps = name_re.captures(filename).unwrap();
+    let name = caps.get(1).map_or_else(|| "", |m| m.as_str());
+    debug!("Got manga name: `{}` using regex", &name);
+
+    if !local_media_data.exists() {
+        debug!(
+            "Local media data does not exist, creating one at {}",
+            &local_media_data.display()
+        );
+        fs::File::create(&local_media_data)?;
+    }
+
+    let local_data = fs::read_to_string(&local_media_data)?;
+    debug!(
+        "Attempting to find media_id of manga `{}` from local media data...",
+        &name
+    );
+    let file_re = Regex::new(format!("{} - mediaId: (\\d+)", &name).as_str())?;
+    match file_re.captures(&local_data) {
+        Some(caps) => {
+            let media_id: i32 = caps
+                .get(1)
+                .unwrap()
+                .as_str()
+                .parse()
+                .expect("Could not parse media_id from str to i64");
+            debug!(
+                "Found media_id: {} of manga `{}` from local media data!",
+                media_id, &name
+            );
+            return Ok(media_id);
+        }
+        None => {
+            debug!("Did not find media_id from local media data. Will now query for it.");
+            let query_result = request::search_media(&mut cfg, &name, MediaType::Manga)?;
+            match query_result.data {
+                Some(media_resp) => {
+                    let media_id = media_resp.media.media_id;
+                    media_resp.media.append_local_data(&local_media_data)?;
+                    return Ok(media_resp.media.media_id);
+                }
+                None => {
+                    // the program should never reach this state!
+                    error!("Could not get media_id from querying API!");
+                    return Err(anyhow!("Could not get media_id from querying API!"));
+                }
+            }
+        }
+    }
 }
