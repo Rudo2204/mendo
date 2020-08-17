@@ -1,7 +1,7 @@
 use anyhow::Result;
 use log::debug;
 use serde::{Deserialize, Serialize};
-use std::fs::{File, OpenOptions};
+use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 use yaml_rust::{YamlEmitter, YamlLoader};
@@ -37,8 +37,7 @@ impl User {
 pub struct MediaTitle {
     pub romaji: Option<String>,
     pub english: Option<String>,
-    pub native: Option<String>,
-    pub user_preferred: Option<String>,
+    pub native: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -72,10 +71,10 @@ impl Media {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct MediaList {
-    pub id: i32,
+    #[serde(rename(deserialize = "id"))]
+    pub entry_id: i32,
     pub status: MediaListStatus,
-    pub progress: Option<i32>,
-    pub progress_volumes: Option<i32>,
+    pub progress: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -134,4 +133,13 @@ pub struct MediaResponse {
 #[serde(rename_all = "PascalCase")]
 pub struct MediaListResponse {
     pub media_list: MediaList,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SaveMediaListEntry {
+    pub id: Option<i32>,
+    pub media_id: Option<i32>,
+    pub status: Option<MediaListStatus>,
+    pub progress: Option<i32>,
 }
