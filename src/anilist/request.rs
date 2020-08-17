@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use log::{debug, error, info};
+use log::{debug, error, info, warn};
 use reqwest::{blocking::Client, StatusCode};
 use serde::de::DeserializeOwned;
 use serde_json::{json, Map, Value};
@@ -7,9 +7,9 @@ use std::{thread, time};
 
 use super::model::{
     MediaListResponse, MediaListStatus, MediaResponse, MediaStatus, MediaType, QueryResponse,
-    ViewerResponse,
+    SaveMediaListEntry, ViewerResponse,
 };
-use super::query::{QUERY_MEDIA_LIST, QUERY_USER, SEARCH_MEDIA};
+use super::query::{QUERY_MEDIA_LIST, QUERY_USER, SEARCH_MEDIA, UPDATE_MEDIA};
 use crate::util::MendoConfig;
 use crate::PROGRAM_NAME;
 
@@ -29,6 +29,7 @@ where
     } else {
         json!({ "query": query_str })
     };
+    debug!("Sending POST request with query = \n{:#?}", query);
 
     let token = &cfg.token;
     let local_rate_limit_count: u8 = 3;
@@ -82,9 +83,9 @@ where
                 return Ok(response);
             }
             _ => {
-                error!("Anilist returned an unimplemented code `{}'!", res_status);
                 let response: QueryResponse<R> = res.json()?;
                 debug!("Response =\n{:#?}", response);
+                error!("Anilist returned an unimplemented code `{}'!", res_status);
                 return Err(anyhow!("Anilist returned an unimplemented response code!"));
             }
         }
@@ -118,7 +119,7 @@ pub fn search_media(
 
     if let serde_json::Value::Object(variables) = variables {
         info!(
-            "Searching Media using name: {}, type: {:?}...",
+            "Searching Media using name: `{}`, type: `{:?}`...",
             search_string, media_type
         );
         query_graphql(SEARCH_MEDIA, &Some(variables), cfg)
@@ -143,7 +144,7 @@ pub fn query_media_list(
 
     if let serde_json::Value::Object(variables) = variables {
         info!(
-            "Querying MediaList for progress using media ID: {}, type: {:?} of user...",
+            "Querying MediaList for progress using media ID: `{}`, type: `{:?}` of user...",
             media_id, media_type
         );
         query_graphql(QUERY_MEDIA_LIST, &Some(variables), cfg)
