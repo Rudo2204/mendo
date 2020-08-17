@@ -171,7 +171,7 @@ pub fn get_media_id(mut cfg: &mut MendoConfig, data_dir: &PathBuf, filename: &st
                 "Found media_id: `{}` of manga `{}` from local media data!",
                 media_id, &name
             );
-            return Ok(media_id);
+            Ok(media_id)
         }
         None => {
             debug!("Did not find media_id from local media data. Will now query for it.");
@@ -184,12 +184,12 @@ pub fn get_media_id(mut cfg: &mut MendoConfig, data_dir: &PathBuf, filename: &st
                         media_id, &name
                     );
                     append_local_data(&local_media_data, name, media_id)?;
-                    return Ok(media_id);
+                    Ok(media_id)
                 }
                 None => {
                     // the program should never reach this state!
                     error!("Could not get ids from querying API!");
-                    return Err(anyhow!("Could not get ids from querying API!"));
+                    Err(anyhow!("Could not get ids from querying API!"))
                 }
             }
         }
@@ -214,16 +214,14 @@ pub fn get_eid_and_progress(
     let query_result = request::query_media_list(&mut cfg, user_id, media_id, MediaType::Manga)?;
 
     match query_result.data {
-        Some(media_list_resp) => {
-            return Ok((
-                media_list_resp.media_list.entry_id,
-                media_list_resp.media_list.progress,
-            ));
-        }
+        Some(media_list_resp) => Ok((
+            media_list_resp.media_list.entry_id,
+            media_list_resp.media_list.progress,
+        )),
         None => {
             // the program should never reach this state!
             error!("Could not get progress from querying API!");
-            return Err(anyhow!("Could not get progress from querying API!"));
+            Err(anyhow!("Could not get progress from querying API!"))
         }
     }
 }
