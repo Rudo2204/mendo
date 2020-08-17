@@ -79,6 +79,27 @@ where
                 )?;
                 return Err(anyhow!("Unthorized! Run the program again to reauthorize!"));
             }
+            // This could happen in two situations:
+            // 1. The user has not created entry for this title.
+            // 2. The input filename is just garbage, could not search for that title
+            StatusCode::NOT_FOUND => {
+                warn!("Anilist returned `{}'!", res.status());
+                if let Some(vars) = &variables {
+                    // This is the 1st situation AKA when using query_media_list
+                    if vars.contains_key("mediaId") {
+                        debug!("It seems like user has not created entry for this title!");
+                        let media_id = vars.get("mediaId").unwrap().as_u64().unwrap() as i32;
+                        debug!("Got media_id `{}` from variables", media_id);
+                        create_new_entry(cfg, media_id, MediaListStatus::Current, 0)?;
+                        info!("Will now retry to query MediaList...");
+                        return Ok(query_graphql(QUERY_MEDIA_LIST, &variables, cfg)?);
+                    // This is the 2ns situation AKA when using search_media
+                    } else {
+                        error!("The API did not return any result! Maybe recheck your archive filename?");
+                        return Err(anyhow!("The API did not return any result! Maybe recheck your archive filename?"));
+                    }
+                }
+            }
             StatusCode::OK => {
                 info!("Anilist returned `{}'!", res.status());
                 let response: QueryResponse<R> = res.json()?;
