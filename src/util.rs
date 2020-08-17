@@ -203,3 +203,25 @@ fn append_local_data(path: &PathBuf, name: &str, media_id: i32) -> Result<()> {
     );
     Ok(())
 }
+
+pub fn get_eid_and_progress(
+    mut cfg: &mut MendoConfig,
+    user_id: i32,
+    media_id: i32,
+) -> Result<(i32, i32)> {
+    let query_result = request::query_media_list(&mut cfg, user_id, media_id, MediaType::Manga)?;
+
+    match query_result.data {
+        Some(media_list_resp) => {
+            return Ok((
+                media_list_resp.media_list.entry_id,
+                media_list_resp.media_list.progress,
+            ));
+        }
+        None => {
+            // the program should never reach this state!
+            error!("Could not get progress from querying API!");
+            return Err(anyhow!("Could not get progress from querying API!"));
+        }
+    }
+}
