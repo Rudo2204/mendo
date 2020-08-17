@@ -156,3 +156,26 @@ pub fn query_media_list(
         Err(anyhow!("Media list query variables is not a json object"))
     }
 }
+pub fn create_new_entry(
+    cfg: &mut MendoConfig,
+    media_id: i32,
+    status: MediaListStatus,
+    progress: i32,
+) -> Result<QueryResponse<SaveMediaListEntry>> {
+    //the Result here has None fields, aka useless
+    let variables = json!({
+        "mediaId": media_id,
+        "status": status,
+        "progress": progress,
+    });
+
+    if let serde_json::Value::Object(variables) = variables {
+        info!("Creating entry for title which has media ID: `{}` with: status `{:?}`, progress `{}` for user...",
+            media_id, status, progress
+        );
+        query_graphql(UPDATE_MEDIA, &Some(variables), cfg)
+    } else {
+        error!("Media list query variables is not a json object");
+        Err(anyhow!("Media list query variables is not a json object"))
+    }
+}
