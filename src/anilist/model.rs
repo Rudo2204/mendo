@@ -51,23 +51,6 @@ pub struct Media {
     pub volumes: Option<i32>,
 }
 
-impl Media {
-    pub fn append_local_data(&self, path: &PathBuf) -> Result<()> {
-        let mut file = OpenOptions::new().append(true).open(&path)?;
-        let data = format!(
-            "{} - mediaId: {}",
-            &self.title.english.as_ref().unwrap(),
-            self.media_id
-        );
-        writeln!(file, "{}", data)?;
-        debug!(
-            "Appended received data to local media data at {}",
-            &path.display()
-        );
-        Ok(())
-    }
-}
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct MediaList {

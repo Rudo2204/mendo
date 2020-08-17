@@ -3,7 +3,8 @@ use directories::ProjectDirs;
 use log::{debug, error, info};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use std::fs;
+use std::fs::{self, File, OpenOptions};
+use std::io::Write;
 use std::path::PathBuf;
 
 use crate::anilist::model::{MediaType, User};
@@ -195,4 +196,13 @@ pub fn get_media_id(mut cfg: &mut MendoConfig, data_dir: &PathBuf, filename: &st
             }
         }
     }
+}
+fn append_local_data(path: &PathBuf, name: &str, media_id: i32) -> Result<()> {
+    let mut file = OpenOptions::new().append(true).open(&path)?;
+    writeln!(file, "{} - mediaId: {}", name, media_id)?;
+    debug!(
+        "Appended received data to local media data at {}",
+        &path.display()
+    );
+    Ok(())
 }
