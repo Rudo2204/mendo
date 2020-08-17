@@ -42,19 +42,11 @@ impl Default for MendoConfig {
 
 impl MendoConfig {
     pub fn access_token_is_valid(&mut self) -> bool {
-        if self.token == "Leave this field." {
-            false
-        } else {
-            true
-        }
+        self.token != "Leave this field."
     }
 
     pub fn ready_to_auth(&mut self) -> bool {
-        if self.id == 0 || self.secret == "Edit this!" || self.name == "Edit this!" {
-            false
-        } else {
-            true
-        }
+        !(self.id == 0 || self.secret == "Edit this!" || self.name == "Edit this!")
     }
 }
 
