@@ -88,7 +88,12 @@ where
                     // This is the 1st situation AKA when using query_media_list
                     if vars.contains_key("mediaId") {
                         debug!("It seems like user has not created entry for this title!");
-                        let media_id = vars.get("mediaId").unwrap().as_u64().unwrap() as i32;
+                        let media_id = vars
+                            .get("mediaId")
+                            .expect("Safe because of the above check")
+                            .as_u64()
+                            .expect("Safe because of how mendo defined media_id")
+                            as i32;
                         debug!("Got media_id `{}` from variables", media_id);
                         create_new_entry(cfg, media_id, MediaListStatus::Current, 0)?;
                         info!("Will now retry to query MediaList...");

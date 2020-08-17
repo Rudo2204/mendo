@@ -139,7 +139,9 @@ pub fn get_user_id(mut cfg: &mut MendoConfig, data_dir: &PathBuf) -> Result<i32>
 pub fn get_media_id(mut cfg: &mut MendoConfig, data_dir: &PathBuf, filename: &str) -> Result<i32> {
     let local_media_data = data_dir.join("media_data.txt");
     let name_re = Regex::new(r"^(.*) v?(\d+)")?;
-    let caps = name_re.captures(filename).unwrap();
+    let caps = name_re
+        .captures(filename)
+        .expect("Safe because of append_local_data");
     let name = caps.get(1).map_or_else(|| "", |m| m.as_str());
     debug!("Got manga name: `{}` using regex", &name);
 
@@ -161,7 +163,7 @@ pub fn get_media_id(mut cfg: &mut MendoConfig, data_dir: &PathBuf, filename: &st
         Some(caps) => {
             let media_id: i32 = caps
                 .get(1)
-                .unwrap()
+                .expect("Safe because of append_local_data")
                 .as_str()
                 .parse()
                 .expect("Could not parse media_id from str to i32");

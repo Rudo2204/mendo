@@ -46,7 +46,10 @@ pub fn auth(cfg: &mut MendoConfig) -> Result<String> {
             let mut request_line = String::new();
 
             reader.read_line(&mut request_line)?;
-            let redirect_url = request_line.split_whitespace().nth(1).unwrap();
+            let redirect_url = request_line
+                .split_whitespace()
+                .nth(1)
+                .expect("Safe because of how anilist defines redirect URI");
             let url = Url::parse(&format!("http://localhost{}", redirect_url))?;
 
             let code_pair = url
