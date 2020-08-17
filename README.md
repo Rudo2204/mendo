@@ -37,6 +37,22 @@ ARGS:
     <filename>    the filename of manga archive
 ```
 
+## Authorization process
+You will need to authorize `mendo` to update your process.\
+First just start `mendo` up (just put in some random filename as args), it will create a new config yaml file in your configuration directory. Refer to the table below.
+
+| Platform | Value                                         | Example                                        |
+|----------|-----------------------------------------------|------------------------------------------------|
+| Linux    | $XDG_CONFIG_HOME/mendo or $HOME/.config/mendo | /home/alice/.config/mendo                      |
+| OSX      | $HOME/Library/Application Support/mendo       | /Users/Alice/Library/Application Support/mendo |
+| Windows  | {FOLDERID_RoamingAppData}\mendo\config        | C:\Users\Alice\AppData\Roaming\mendo\config    |
+
+Then come to [API Clients page of Anilist](https://anilist.co/settings/developer) and create a new client.
+In the `Name` field, put whatever you want, in the `Redirect URL` field, put `http://localhost:8080/callback` and then click `Save`. It will proceed to create a new client.
+Then open the config file in your configuration directory in the above step, edit it with the information given from Anilist. (Edit the name, id, secret fields, leave the token field)
+
+Then the final step is to start `mendo` up again to kick start your authorization process. When the authorization process finishes, it will save an access token to your config file and you are ready to go.
+
 ## How to integrate with MComix
 Open MComix, File -> Open with -> Edit commands. Add a new external command, call it whatever you want.\
 And the command would be `/path/to/mendo %a`. You can add a some `-v` to increase debug information logged to your data directory. You should find a directory named `mendo` in there. Refer to the table below.
