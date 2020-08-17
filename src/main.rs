@@ -11,7 +11,7 @@ mod util;
 use anilist::{oauth, request};
 use util::MendoConfig;
 
-const PROGRAM_NAME: &str = "mendo";
+pub const PROGRAM_NAME: &str = "mendo";
 
 fn setup_logging(verbosity: u64) -> Result<()> {
     let colors_line = ColoredLevelConfig::new()
@@ -107,6 +107,7 @@ fn main() -> Result<()> {
                 .help("Sets the level of debug information verbosity"),
         )
         .get_matches();
+
     let verbosity: u64 = matches.occurrences_of("verbose");
     let data_dir = util::get_data_dir("", "", PROGRAM_NAME)?;
 
@@ -140,6 +141,13 @@ fn main() -> Result<()> {
     }
     info!("Token from config file is valid. Let's get to work!");
     let user_id = util::get_user_id(&mut mendo_cfg, &data_dir)?;
+    let filename = matches
+        .value_of("filename")
+        .expect("Safe because of clap handling");
+    let media_id = util::get_media_id(&mut mendo_cfg, &data_dir, &filename)?;
+    let (entry_id, progress) = util::get_eid_and_progress(&mut mendo_cfg, user_id, media_id)?;
+
+    request::update_media(&mut mendo_cfg, entry_id, progress + 1)?;
 
     debug!("-----Everything is finished!-----");
     Ok(())
