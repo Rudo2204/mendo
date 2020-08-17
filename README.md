@@ -15,7 +15,7 @@ MComix has not released any new version since 2016-02-12 (the last version they 
 ## The solutions
 So there are two solutions to this:
 1. Occasionally Alt-tab to Anilist and press the `+` button to update your progress. Super easy, super convenient.
-2. Use an external command from MComix to run a command and use [Anilist's API](https://anilist.github.io/ApiV2-GraphQL-Docs/) to automate this process. And you can already guess I chose to do.
+2. Use the external command support feature of MComix to run an external command and make use [Anilist's API](https://anilist.github.io/ApiV2-GraphQL-Docs/) to automate this process. And you can already guess what I chose to do.
 
 <img src="https://i.imgur.com/ZfwMZZe.png" width="400" height="400">
 
@@ -39,7 +39,7 @@ ARGS:
 
 ## Authorization process
 You will need to authorize `mendo` to update your process.\
-First just start `mendo` up (just put in some random filename as args), it will create a new config yaml file in your configuration directory. Refer to the table below.
+First, start `mendo` up (just put in some random filename as args), it will create a new config yaml file in your configuration directory. Refer to the table below.
 
 | Platform | Value                                         | Example                                        |
 |----------|-----------------------------------------------|------------------------------------------------|
