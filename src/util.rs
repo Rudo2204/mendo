@@ -58,14 +58,6 @@ impl MendoConfig {
     }
 }
 
-fn capitalize_word(s: &str) -> String {
-    let mut c = s.chars();
-    match c.next() {
-        None => String::new(),
-        Some(f) => f.to_uppercase().chain(c).collect(),
-    }
-}
-
 pub fn get_conf_dir(qualifier: &str, organization: &str, application: &str) -> Result<PathBuf> {
     let proj_dirs = ProjectDirs::from(&qualifier, &organization, &application)
         .expect("Could not retrieve ProjectDirs, maybe you are using an unsupported OS");
@@ -94,7 +86,7 @@ pub fn create_proj_conf(qualifier: &str, organization: &str, application: &str) 
 
     debug!(
         "{} configuration file does not exist. I will now create a configuration file at {}",
-        capitalize_word(&application),
+        &application,
         conf_dir.display()
     );
     confy::store(&application, MendoConfig::default())?;
@@ -140,13 +132,13 @@ pub fn get_user_id(mut cfg: &mut MendoConfig, data_dir: &PathBuf) -> Result<i32>
     let s = fs::read_to_string(&user_profile_path)?;
     let user: User = serde_yaml::from_str(&s)?;
     let user_id = user.id;
-    debug!("Got user_id {} of authenticated user!", user_id);
+    debug!("Got user_id `{}` of authenticated user!", user_id);
     Ok(user_id)
 }
 
 pub fn get_media_id(mut cfg: &mut MendoConfig, data_dir: &PathBuf, filename: &str) -> Result<i32> {
     let local_media_data = data_dir.join("media_data.txt");
-    let name_re = Regex::new(r"^(.*) v?\d+")?;
+    let name_re = Regex::new(r"^(.*) v?(\d+)")?;
     let caps = name_re.captures(filename).unwrap();
     let name = caps.get(1).map_or_else(|| "", |m| m.as_str());
     debug!("Got manga name: `{}` using regex", &name);
@@ -156,7 +148,7 @@ pub fn get_media_id(mut cfg: &mut MendoConfig, data_dir: &PathBuf, filename: &st
             "Local media data does not exist, creating one at {}",
             &local_media_data.display()
         );
-        fs::File::create(&local_media_data)?;
+        File::create(&local_media_data)?;
     }
 
     let local_data = fs::read_to_string(&local_media_data)?;
@@ -172,9 +164,9 @@ pub fn get_media_id(mut cfg: &mut MendoConfig, data_dir: &PathBuf, filename: &st
                 .unwrap()
                 .as_str()
                 .parse()
-                .expect("Could not parse media_id from str to i64");
+                .expect("Could not parse media_id from str to i32");
             debug!(
-                "Found media_id: {} of manga `{}` from local media data!",
+                "Found media_id: `{}` of manga `{}` from local media data!",
                 media_id, &name
             );
             return Ok(media_id);
@@ -185,18 +177,23 @@ pub fn get_media_id(mut cfg: &mut MendoConfig, data_dir: &PathBuf, filename: &st
             match query_result.data {
                 Some(media_resp) => {
                     let media_id = media_resp.media.media_id;
-                    media_resp.media.append_local_data(&local_media_data)?;
-                    return Ok(media_resp.media.media_id);
+                    debug!(
+                        "Found media_id: `{}` of manga `{}` from querying the API!",
+                        media_id, &name
+                    );
+                    append_local_data(&local_media_data, name, media_id)?;
+                    return Ok(media_id);
                 }
                 None => {
                     // the program should never reach this state!
-                    error!("Could not get media_id from querying API!");
-                    return Err(anyhow!("Could not get media_id from querying API!"));
+                    error!("Could not get ids from querying API!");
+                    return Err(anyhow!("Could not get ids from querying API!"));
                 }
             }
         }
     }
 }
+
 fn append_local_data(path: &PathBuf, name: &str, media_id: i32) -> Result<()> {
     let mut file = OpenOptions::new().append(true).open(&path)?;
     writeln!(file, "{} - mediaId: {}", name, media_id)?;
