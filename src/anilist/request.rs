@@ -34,9 +34,12 @@ where
     let token = &cfg.token;
     let local_rate_limit_count: u8 = 3;
 
-    for _ in 0..local_rate_limit_count {
-        let client = Client::new();
-        debug!("Sending POST request with query = \n{:#?}", query);
+    let client = Client::new();
+
+    for i in 0..local_rate_limit_count {
+        if i > 0 {
+            warn!("Retrying {}...", i);
+        }
         let res = client
             .post(ANILIST_API_URL)
             .header("ContentType", "application/json")
