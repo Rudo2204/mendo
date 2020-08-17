@@ -41,11 +41,11 @@ ARGS:
 Open MComix, File -> Open with -> Edit commands. Add a new external command, call it whatever you want.\
 And the command would be `/path/to/mendo %a`. You can add a some `-v` to increase debug information logged to your data directory. You should find a directory named `mendo` in there. Refer to the table below.
 
-| Platform | Value                             | Example                                  |
-|----------|-----------------------------------|------------------------------------------|
-| Linux    | $XDG_DATA_HOME or $HOME           | /home/alice/.local/share                 |
-| OSX      | $HOME/Library/Application Support | /Users/Alice/Library/Application Support |
-| Windows  | {FOLDERID_RoamingAppData}         | C:\Users\Alice\AppData\Roaming           |
+| Platform | Value                                            | Example                                        |
+|----------|--------------------------------------------------|------------------------------------------------|
+| Linux    | $XDG_DATA_HOME/mendo or $HOME/.local/share/mendo | /home/alice/.local/share/mendo                 |
+| OSX      | $HOME/Library/Application Support/mendo          | /Users/Alice/Library/Application Support/mendo |
+| Windows  | {FOLDERID_RoamingAppData}\mendo\data             | C:\Users\Alice\AppData\Roaming\mendo\data      |
 
 ## How to actually use it
 So when you are done with the integration process, open your manga archives and read them like normal. When you come to a new chapter, press the assigned external button corresponding to `mendo` command. It will automatically update +1 to your manga progress. Yay.\
