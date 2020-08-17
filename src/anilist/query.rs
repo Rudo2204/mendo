@@ -18,7 +18,6 @@ query ($search: String, $type: MediaType, $status_not: MediaStatus) {
             romaji
             english
             native
-            userPreferred
         }
         synonyms
         chapters
@@ -33,7 +32,6 @@ query ($userId: Int, $mediaId: Int, $type: MediaType, $status_not: MediaListStat
         id
         status
         progress
-        progressVolumes
     }
 }
 ";
@@ -42,10 +40,17 @@ pub const UPDATE_MEDIA: &str = "
 mutation(
   $id: Int,
   $mediaId: Int,
+  $status: MediaListStatus
   $progress: Int,
 ) {
-  SaveMediaListEntry(id: $id, mediaId: $mediaId, progress: $progress) {
+  SaveMediaListEntry(
+      id: $id,
+      mediaId: $mediaId,
+      status: $status,
+      progress: $progress) {
     id
+    mediaId
+    status
     progress
   }
 }
