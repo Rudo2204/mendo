@@ -3,17 +3,11 @@
 # https://github.com/dh1tw/remoteAudio/blob/master/.github/workflows/build.yml
 # https://github.com/actions-rs
 # TODO: Set CRATE_NAME to match the project name
-# TODO: Add `test` and more if you need to.
-# TODO: Change bin to lib or both if you build a library
-name: mendo
+name: CI
+env:
+  CRATE_NAME: mendo
 
-on:
-  push:
-    branches:
-      - master
-    tags:
-      - 'v*' # matches v0.2, v1.0, v2.15.23, ect.
-  pull_request:
+on: [push, pull_request]
 
 jobs:
   lints:
@@ -60,10 +54,6 @@ jobs:
     name: CI Check
     runs-on: ubuntu-latest
     steps:
-      - name: Set CRATE_NAME
-        id: set_crate_name
-        run: echo ::set-output name=CRATE_NAME::mendo
-
       - uses: actions/checkout@v2
 
       - uses: actions/cache@v2
@@ -85,39 +75,26 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: check
-          args: --bin ${{ steps.set_crate_name.outputs.CRATE_NAME }} --locked
+          args: --locked
 
-  release:
-    if: startsWith(github.ref, 'refs/tags/v')
+  build:
     needs: check
-    name: Release
+    name: Build
     runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
-        # Can also use this section to pass args depending on the running os, see 2nd link!
-        # TODO: Change the name here
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            bin: target/release/mendo
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            bin: target/release/mendo.exe
+            suffix: .exe
           - os: macOS-latest
             target: x86_64-apple-darwin
-            bin: target/release/mendo
 
     steps:
-      - name: Set CRATE_NAME
-        id: set_crate_name
-        run: echo ::set-output name=CRATE_NAME::mendo
-
-      - name: Get VERSION
-        id: get_version
-        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
-
       - uses: actions/checkout@v2
 
       - uses: actions/cache@v2
@@ -126,61 +103,52 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ runner.os }}-release-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-build-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-release-
+            ${{ runner.os }}-build-
 
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: stable
-          target: ${{ matrix.target }}
           override: true
 
       - uses: actions-rs/cargo@v1
-        env:
-          CRATE_NAME: ${{ steps.set_crate_name.outputs.CRATE_NAME }}
         with:
           command: build
-          args: --bin $CRATE_NAME --release --locked
+          args: --release --locked --target=${{ matrix.target }}
 
       - uses: svenstaro/upx-action@2.0.1
         with:
-          file: ${{ matrix.bin }}
+          file: target/${{ matrix.target }}/release/${{ env.CRATE_NAME }}${{ matrix.suffix }}
           args: --best
           strip: true
 
-      - uses: edgarrc/action-7z@v1.0.4
-        env:
-          CRATE_NAME: ${{ steps.set_crate_name.outputs.CRATE_NAME }}
-          VERSION: ${{ steps.get_version.outputs.VERSION }}
+      - uses: actions/upload-artifact@master
         with:
-          args: 7z a -t7z $CRATE_NAME-$VERSION-${{ matrix.target}}.7z ${{ matrix.bin }}
+          name: ${{ env.CRATE_NAME }}-${{ matrix.target }}${{ matrix.suffix }}
+          path: target/${{ matrix.target }}/release/${{ env.CRATE_NAME }}${{ matrix.suffix }}
 
-      - name: Prepare artifact
-        id: prepare_artifact
-        env:
-          CRATE_NAME: ${{ steps.set_crate_name.outputs.CRATE_NAME }}
-          VERSION: ${{ steps.get_version.outputs.VERSION }}
+      - name: Get VERSION
+        if: startsWith(github.ref, 'refs/tags/v')
+        id: get_version
+        shell: bash
         run: |
-          echo ::set-output name=ARTIFACT_PATH::./$CRATE_NAME-$VERSION-${{ matrix.target }}.7z
-          echo ::set-output name=ARTIFACT_NAME::$CRATE_NAME-$VERSION-${{ matrix.target }}.7z
+          echo "::set-output name=VERSION::${GITHUB_REF#refs/tags/}"
 
-      - uses: actions/create-release@v1
-        id: create_release
+      - name: Renaming file before uploading
+        if: startsWith(github.ref, 'refs/tags/v')
         env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-            tag_name: ${{ github.ref }}
-            release_name: Release ${{ github.ref }}
-            draft: true
-            prerelease: false
+          VERSION: ${{ steps.get_version.outputs.VERSION }}
+        shell: bash
+        run: |
+          cp target/${{ matrix.target }}/release/${{ env.CRATE_NAME }}${{ matrix.suffix }} ${{ env.CRATE_NAME }}-$VERSION-${{ matrix.target }}${{ matrix.suffix }}
 
-      - uses: actions/upload-release-asset@v1.0.2
+      - uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          draft: true
+          prerelease: false
+          files: ${{ env.CRATE_NAME }}-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}${{ matrix.suffix }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ steps.prepare_artifact.outputs.ARTIFACT_PATH }}
-          asset_name: ${{ steps.prepare_artifact.outputs.ARTIFACT_NAME }}
-          asset_content_type: application/x-7z-compressed
