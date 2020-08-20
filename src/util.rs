@@ -132,14 +132,14 @@ pub fn get_user_id(mut cfg: &mut MendoConfig, data_dir: &PathBuf, client: &Clien
     Ok(user_id)
 }
 
-fn get_manga_name(filename: &str) -> Result<&str> {
-    let name_re = Regex::new(r"^(.*) v?(\d+)").expect("this is safe");
+fn get_manga_name<'a>(filename: &'a str, pattern: &'a str) -> Result<&'a str> {
+    let name_re = Regex::new(&pattern)?;
     let caps = match name_re.captures(filename) {
         Some(cap) => cap,
         None => {
-            error!("Could not get name from archive filename. Recheck your naming convention?");
+            error!("Could not get name from archive filename. Try to use the --regexp option?");
             return Err(anyhow!(
-                "Could not get name from archive filename. Recheck your naming convention?"
+                "Could not get name from archive filename. Try to use the --regexp option?"
             ));
         }
     };
@@ -147,8 +147,8 @@ fn get_manga_name(filename: &str) -> Result<&str> {
 }
 
 #[cfg(target_family = "unix")]
-pub fn notify_updated(filename: &str, progress: i32) -> Result<NotificationHandle> {
-    let name = get_manga_name(&filename)?;
+pub fn notify_updated(filename: &str, pattern: &str, progress: i32) -> Result<NotificationHandle> {
+    let name = get_manga_name(&filename, &pattern)?;
     Ok(Notification::new()
         .appname("mendo")
         .summary(format!("Updated manga `{}` with progress `{}`", name, progress).as_str())
@@ -159,10 +159,11 @@ pub fn get_media_id(
     mut cfg: &mut MendoConfig,
     data_dir: &PathBuf,
     filename: &str,
+    pattern: &str,
     client: &Client,
 ) -> Result<i32> {
     let local_media_data = data_dir.join("media_data.txt");
-    let name = get_manga_name(&filename)?;
+    let name = get_manga_name(&filename, &pattern)?;
     debug!("Got manga name: `{}` using regex", &name);
 
     if !local_media_data.exists() {

@@ -107,12 +107,22 @@ fn main() -> Result<()> {
                 .about("Authorizes mendo to update progress"),
         )
         .subcommand(
-            App::new("update").about("Updates manga progress").arg(
-                Arg::with_name("filename")
-                    .help("the filename of manga archive")
-                    .takes_value(true)
-                    .required(true),
-            ),
+            App::new("update")
+                .about("Updates manga progress")
+                .arg(
+                    Arg::with_name("filename")
+                        .help("the filename of manga archive")
+                        .takes_value(true)
+                        .required(true),
+                )
+                .arg(
+                    Arg::with_name("regexp")
+                        .short("e")
+                        .long("regexp")
+                        .help("Overrides filename regex pattern")
+                        .takes_value(true)
+                        .default_value(r"^(.*) (v?|c?)\d+"),
+                ),
         )
         .arg(
             Arg::with_name("verbose")
@@ -164,18 +174,28 @@ fn main() -> Result<()> {
         info!("Token from config file is valid. Let's get to work!");
         // Reuse a single client to take advantage of keep-alive connection pooling
         let client = Client::new();
+
+        let filename_pattern = update_matches
+            .value_of("regexp")
+            .expect("Safe because of default value");
         let user_id = util::get_user_id(&mut mendo_cfg, &data_dir, &client)?;
         let filename = update_matches
             .value_of("filename")
             .expect("Safe because of clap handling");
-        let media_id = util::get_media_id(&mut mendo_cfg, &data_dir, &filename, &client)?;
+        let media_id = util::get_media_id(
+            &mut mendo_cfg,
+            &data_dir,
+            &filename,
+            &filename_pattern,
+            &client,
+        )?;
         let (entry_id, progress) =
             util::get_eid_and_progress(&mut mendo_cfg, user_id, media_id, &client)?;
 
         request::update_media(&mut mendo_cfg, entry_id, progress + 1, &client)?;
 
         #[cfg(target_family = "unix")]
-        util::notify_updated(&filename, progress + 1)?;
+        util::notify_updated(&filename, &filename_pattern, progress + 1)?;
     }
 
     debug!("-----Everything is finished!-----");
