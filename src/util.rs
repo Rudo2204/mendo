@@ -147,6 +147,7 @@ pub fn notify_updated(filename: &str, pattern: &str, progress: i32) -> Result<No
     let name = get_manga_name(&filename, &pattern)?;
     Ok(Notification::new()
         .appname("mendo")
+        .timeout(2000)
         .summary(format!("Updated manga `{}` with progress `{}`", name, progress).as_str())
         .show()?)
 }
