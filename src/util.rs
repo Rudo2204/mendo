@@ -128,13 +128,23 @@ pub fn get_user_id(mut cfg: &mut MendoConfig, data_dir: &PathBuf) -> Result<i32>
     Ok(user_id)
 }
 
+pub fn get_manga_name(filename: &str) -> Result<&str> {
+    let name_re = Regex::new(r"^(.*) v?(\d+)").expect("this is safe");
+    let caps = match name_re.captures(filename) {
+        Some(cap) => cap,
+        None => {
+            error!("Could not get name from archive filename. Recheck your naming convention?");
+            return Err(anyhow!(
+                "Could not get name from archive filename. Recheck your naming convention?"
+            ));
+        }
+    };
+    Ok(caps.get(1).map_or_else(|| "", |m| m.as_str()))
+}
+
 pub fn get_media_id(mut cfg: &mut MendoConfig, data_dir: &PathBuf, filename: &str) -> Result<i32> {
     let local_media_data = data_dir.join("media_data.txt");
-    let name_re = Regex::new(r"^(.*) v?(\d+)")?;
-    let caps = name_re
-        .captures(filename)
-        .expect("Safe because of append_local_data");
-    let name = caps.get(1).map_or_else(|| "", |m| m.as_str());
+    let name = get_manga_name(&filename)?;
     debug!("Got manga name: `{}` using regex", &name);
 
     if !local_media_data.exists() {
