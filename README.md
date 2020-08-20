@@ -39,20 +39,9 @@ SUBCOMMANDS:
 ```
 
 ## Authorization process
-You will need to authorize `mendo` to update your process.\
-First start `mendo auth`, it will create a new config yaml file in your configuration directory. Refer to the table below.
-
-| Platform | Value                                         | Example                                        |
-|----------|-----------------------------------------------|------------------------------------------------|
-| Linux    | $XDG_CONFIG_HOME/mendo or $HOME/.config/mendo | /home/alice/.config/mendo                      |
-| OSX      | $HOME/Library/Application Support/mendo       | /Users/Alice/Library/Application Support/mendo |
-| Windows  | {FOLDERID_RoamingAppData}\mendo\config        | C:\Users\Alice\AppData\Roaming\mendo\config    |
-
-Then come to [API Clients page of Anilist](https://anilist.co/settings/developer) and create a new client.
-In the `Name` field, put whatever you want, in the `Redirect URL` field, put `http://localhost:8080/callback` and then click `Save`. It will proceed to create a new client.
-Then open the config file in your configuration directory in the above step, edit it with the information given from Anilist. (Edit the name, id, secret fields, leave the token field)
-
-Then the final step is to start `mendo` up again to kick start your authorization process. When the authorization process finishes, it will save an access token to your config file and you are ready to go.
+You need to authorize `mendo` to use the main feature of the program which is the `update` feature.
+To start the authorization process, simply type `mendo auth` in your terminal. It will open your browser and redirect you to Anilist page where you would press another green button Authorize to complete the process. That's it.\
+**Note:** If you somehow mess up something and need to reauthorize, you can use `mendo auth --force` to force `mendo` to reauthorize you.
 
 ## How to integrate with MComix
 Open MComix, File -> Open with -> Edit commands. Add a new external command, call it whatever you want.\
