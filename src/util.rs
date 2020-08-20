@@ -148,7 +148,7 @@ pub fn notify_updated(filename: &str, progress: i32) -> Result<NotificationHandl
     let name = get_manga_name(&filename)?;
     Ok(Notification::new()
         .appname("mendo")
-        .summary(format!("Updated manga `{}` with progress `{}`", name, progress + 1).as_str())
+        .summary(format!("Updated manga `{}` with progress `{}`", name, progress).as_str())
         .show()?)
 }
 
