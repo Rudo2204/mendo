@@ -1,7 +1,6 @@
 use anyhow::{anyhow, Result};
 use directories::ProjectDirs;
 use log::{debug, error, info};
-use notify_rust::{Notification, NotificationHandle};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::fs::{self, File, OpenOptions};
@@ -10,6 +9,9 @@ use std::path::PathBuf;
 
 use crate::anilist::model::{MediaType, User};
 use crate::anilist::request;
+
+#[cfg(target_family = "unix")]
+use notify_rust::{Notification, NotificationHandle};
 
 #[derive(Serialize, Deserialize, Debug)]
 struct AnilistToken<'a> {
