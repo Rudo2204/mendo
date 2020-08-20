@@ -66,7 +66,7 @@ And the command would be `/path/to/mendo update %a`. You can add a some `-v` to 
 
 ## How to actually use it
 So when you are done with the integration process, open your manga archives and read them like normal. When you come to a new chapter, press the assigned external button corresponding to `mendo` command. It will automatically update +1 to your manga progress. Yay.\
-**NOTE:** The filename of your manga archive MUST match the regex `^(.*) v?(\d+)` (all manga rippers use this naming convention I think?) else it won't work. The actual manga name can be in their native name, romaji or english. As long as it's the first result when you search on Anilist it should work.
+**NOTE:** By default, the regex pattern `^(.*) (v?|c?)\d+` (most manga rippers use this naming convention) is used to get the manga title from the archived file. You can override this pattern with the optional flag `--regexp` (or `-e` for short). The manga title can be in their native name, romaji or english. As long as it's the first result when you search on Anilist it should work.
 
 ## Contribute
 [Create new issue](https://github.com/Rudo2204/rtend/issues) if you meet any bugs or have any ideas.\
