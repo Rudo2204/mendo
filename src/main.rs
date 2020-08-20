@@ -2,7 +2,10 @@ use anyhow::Result;
 use clap::{crate_authors, crate_description, crate_version, App, AppSettings, Arg};
 use fs2::FileExt;
 use reqwest::blocking::Client;
-use std::{fs::File, io};
+use std::{
+    fs::{remove_file, File},
+    io,
+};
 
 use chrono::{Local, Utc};
 use fern::colors::{Color, ColoredLevelConfig};
@@ -151,14 +154,19 @@ fn main() -> Result<()> {
 
     let mut mendo_cfg: MendoConfig = confy::load(PROGRAM_NAME)?;
     if let Some(auth_matches) = matches.subcommand_matches("auth") {
-        debug!("Config file loaded. Checking for auth status...");
-        if !mendo_cfg.access_token_is_valid() || auth_matches.is_present("force") {
-            info!("Starting authorization process...");
-            println!("Starting authorization process...");
-            let res_token = oauth::auth(&mut mendo_cfg)?;
-            util::cfg_save_token(PROGRAM_NAME, &mut mendo_cfg, &res_token)?;
-            println!("Authorization process finished. Now you can use `update` subcommand!");
+        if auth_matches.is_present("force") {
+            debug!("Force flag is present. Deleting user.yml and token in config file...");
+            remove_file(data_dir.join("user.yml"))?;
+            debug!("user.yml file in data directory has been deleted.");
+            confy::store(PROGRAM_NAME, MendoConfig::default())?;
+            debug!("Config file has been overridden with default values.");
+        } else if !mendo_cfg.access_token_is_valid() {
+            debug!("Token is invalid...");
         }
+        println!("Starting authorization process...");
+        let res_token = oauth::auth(&mut mendo_cfg)?;
+        util::cfg_save_token(PROGRAM_NAME, &mut mendo_cfg, &res_token)?;
+        println!("Authorization process finished. Now you can use `update` subcommand!");
     }
 
     if let Some(update_matches) = matches.subcommand_matches("update") {
