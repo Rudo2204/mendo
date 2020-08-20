@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use clap::{crate_authors, crate_description, crate_version, App, Arg};
+use clap::{crate_authors, crate_description, crate_version, App, AppSettings, Arg};
 use std::io;
 
 use chrono::{Local, Utc};
@@ -90,14 +90,18 @@ fn setup_logging(verbosity: u64) -> Result<()> {
 
 fn main() -> Result<()> {
     let matches = App::new(PROGRAM_NAME)
+        .setting(AppSettings::DisableHelpSubcommand)
         .version(crate_version!())
         .author(crate_authors!())
         .about(crate_description!())
-        .arg(
-            Arg::with_name("filename")
-                .help("the filename of manga archive")
-                .takes_value(true)
-                .required(true),
+        .subcommand(App::new("auth").about("Authorizes mendo to update progress"))
+        .subcommand(
+            App::new("update").about("Updates manga progress").arg(
+                Arg::with_name("filename")
+                    .help("the filename of manga archive")
+                    .takes_value(true)
+                    .required(true),
+            ),
         )
         .arg(
             Arg::with_name("verbose")
@@ -121,33 +125,36 @@ fn main() -> Result<()> {
     }
 
     let mut mendo_cfg: MendoConfig = confy::load(PROGRAM_NAME)?;
-    debug!("Config file loaded. Checking for auth status...");
-
-    // TODO: Better auth checking
-    if !mendo_cfg.ready_to_auth() {
-        println!(
+    if matches.is_present("auth") {
+        debug!("Config file loaded. Checking for auth status...");
+        if !mendo_cfg.ready_to_auth() {
+            println!(
             "You need to edit information in the config file first before we can authorize you."
         );
-        println!("Mendo's config file is located at {}", conf_file.display());
-        error!("One or more fields in conf file has not been edited. Exiting...");
-        return Err(anyhow!(
-            "One or more fields in conf file has not been edited!"
-        ));
-    } else if !mendo_cfg.access_token_is_valid() {
-        warn!("Access token is invalid. Starting authorization process...");
-        println!("Starting authorization process...");
-        let res_token = oauth::auth(&mut mendo_cfg)?;
-        mendo_cfg = util::cfg_save_token(PROGRAM_NAME, &mut mendo_cfg, &res_token)?;
+            println!("Mendo's config file is located at {}", conf_file.display());
+            error!("One or more fields in conf file has not been edited. Exiting...");
+            return Err(anyhow!(
+                "One or more fields in conf file has not been edited!"
+            ));
+        } else if !mendo_cfg.access_token_is_valid() {
+            warn!("Access token is invalid. Starting authorization process...");
+            println!("Starting authorization process...");
+            let res_token = oauth::auth(&mut mendo_cfg)?;
+            util::cfg_save_token(PROGRAM_NAME, &mut mendo_cfg, &res_token)?;
+        }
     }
-    info!("Token from config file is valid. Let's get to work!");
-    let user_id = util::get_user_id(&mut mendo_cfg, &data_dir)?;
-    let filename = matches
-        .value_of("filename")
-        .expect("Safe because of clap handling");
-    let media_id = util::get_media_id(&mut mendo_cfg, &data_dir, &filename)?;
-    let (entry_id, progress) = util::get_eid_and_progress(&mut mendo_cfg, user_id, media_id)?;
 
-    request::update_media(&mut mendo_cfg, entry_id, progress + 1)?;
+    if let Some(update_matches) = matches.subcommand_matches("update") {
+        info!("Token from config file is valid. Let's get to work!");
+        let user_id = util::get_user_id(&mut mendo_cfg, &data_dir)?;
+        let filename = update_matches
+            .value_of("filename")
+            .expect("Safe because of clap handling");
+        let media_id = util::get_media_id(&mut mendo_cfg, &data_dir, &filename)?;
+        let (entry_id, progress) = util::get_eid_and_progress(&mut mendo_cfg, user_id, media_id)?;
+
+        request::update_media(&mut mendo_cfg, entry_id, progress + 1)?;
+    }
 
     debug!("-----Everything is finished!-----");
     Ok(())
