@@ -3,13 +3,14 @@ use log::{debug, error, info, warn};
 use reqwest::{blocking::Client, StatusCode};
 use serde::de::DeserializeOwned;
 use serde_json::{json, Map, Value};
-use std::{thread, time};
+use std::{fs::remove_file, thread, time};
 
 use super::model::{
     MediaListResponse, MediaListStatus, MediaResponse, MediaStatus, MediaType, QueryResponse,
     SaveMediaListEntry, ViewerResponse,
 };
 use super::query::{QUERY_MEDIA_LIST, QUERY_USER, SEARCH_MEDIA, UPDATE_MEDIA};
+use crate::util;
 use crate::util::MendoConfig;
 use crate::PROGRAM_NAME;
 
@@ -70,6 +71,8 @@ where
                 let response: QueryResponse<R> = res.json()?;
                 debug!("Response =\n{:#?}", response);
                 debug!("Deleting the existing token to force user to reauth...");
+                let user_profile_path = util::get_data_dir("", "", PROGRAM_NAME)?.join("user.yml");
+                remove_file(&user_profile_path)?;
                 confy::store(
                     PROGRAM_NAME,
                     MendoConfig {
