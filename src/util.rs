@@ -2,6 +2,7 @@ use anyhow::{anyhow, Result};
 use directories::ProjectDirs;
 use log::{debug, error, info};
 use regex::Regex;
+use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
 use std::fs::{self, File, OpenOptions};
 use std::io::Write;
@@ -114,11 +115,11 @@ pub fn cfg_save_token(
     Ok(cfg_with_token)
 }
 
-pub fn get_user_id(mut cfg: &mut MendoConfig, data_dir: &PathBuf) -> Result<i32> {
+pub fn get_user_id(mut cfg: &mut MendoConfig, data_dir: &PathBuf, client: &Client) -> Result<i32> {
     let user_profile_path = data_dir.join("user.yml");
     if !user_profile_path.exists() {
         debug!("Local user profile does not exist. Querying to create one...");
-        let query_result = request::query_user(&mut cfg)?;
+        let query_result = request::query_user(&mut cfg, &client)?;
         if let Some(viewer_resp) = query_result.data {
             viewer_resp.viewer.dump_user_info(&user_profile_path)?;
         }
@@ -154,7 +155,12 @@ pub fn notify_updated(filename: &str, progress: i32) -> Result<NotificationHandl
         .show()?)
 }
 
-pub fn get_media_id(mut cfg: &mut MendoConfig, data_dir: &PathBuf, filename: &str) -> Result<i32> {
+pub fn get_media_id(
+    mut cfg: &mut MendoConfig,
+    data_dir: &PathBuf,
+    filename: &str,
+    client: &Client,
+) -> Result<i32> {
     let local_media_data = data_dir.join("media_data.txt");
     let name = get_manga_name(&filename)?;
     debug!("Got manga name: `{}` using regex", &name);
@@ -189,7 +195,7 @@ pub fn get_media_id(mut cfg: &mut MendoConfig, data_dir: &PathBuf, filename: &st
         }
         None => {
             debug!("Did not find media_id from local media data. Will now query for it.");
-            let query_result = request::search_media(&mut cfg, &name, MediaType::Manga)?;
+            let query_result = request::search_media(&mut cfg, &name, MediaType::Manga, &client)?;
             match query_result.data {
                 Some(media_resp) => {
                     let media_id = media_resp.media.media_id;
@@ -220,8 +226,10 @@ pub fn get_eid_and_progress(
     mut cfg: &mut MendoConfig,
     user_id: i32,
     media_id: i32,
+    client: &Client,
 ) -> Result<(i32, i32)> {
-    let query_result = request::query_media_list(&mut cfg, user_id, media_id, MediaType::Manga)?;
+    let query_result =
+        request::query_media_list(&mut cfg, user_id, media_id, MediaType::Manga, &client)?;
 
     match query_result.data {
         Some(media_list_resp) => Ok((

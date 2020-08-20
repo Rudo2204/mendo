@@ -19,6 +19,8 @@ pub fn query_graphql<R>(
     query_str: &str,
     variables: &Option<Map<String, Value>>,
     cfg: &mut MendoConfig,
+    client: &Client,
+    use_token: bool,
 ) -> Result<QueryResponse<R>>
 where
     R: DeserializeOwned + std::fmt::Debug,
@@ -34,19 +36,20 @@ where
     let token = &cfg.token;
     let local_rate_limit_count: u8 = 3;
 
-    let client = Client::new();
-
     for i in 0..local_rate_limit_count {
         if i > 0 {
             warn!("Retrying {}...", i);
         }
-        let res = client
+        let mut cl = client
             .post(ANILIST_API_URL)
             .header("ContentType", "application/json")
-            .header("Authorization", format!("Bearer {}", token))
-            .header("Accept", "application/json")
-            .json(&query)
-            .send()?;
+            .header("Accept", "application/json");
+
+        if use_token {
+            cl = cl.header("Authorization", format!("Bearer {}", token));
+        }
+
+        let res = cl.json(&query).send()?;
 
         let res_status = res.status();
 
@@ -95,9 +98,15 @@ where
                             .expect("Safe because of how mendo defined media_id")
                             as i32;
                         debug!("Got media_id `{}` from variables", media_id);
-                        create_new_entry(cfg, media_id, MediaListStatus::Current, 0)?;
+                        create_new_entry(cfg, media_id, MediaListStatus::Current, 0, client)?;
                         info!("Will now retry to query MediaList...");
-                        return Ok(query_graphql(QUERY_MEDIA_LIST, &variables, cfg)?);
+                        return Ok(query_graphql(
+                            QUERY_MEDIA_LIST,
+                            &variables,
+                            cfg,
+                            &client,
+                            false,
+                        )?);
                     // This is the 2ns situation AKA when using search_media
                     } else {
                         error!("The API did not return any result! Maybe recheck your archive filename?");
@@ -112,8 +121,6 @@ where
                 return Ok(response);
             }
             _ => {
-                let response: QueryResponse<R> = res.json()?;
-                debug!("Response =\n{:#?}", response);
                 error!("Anilist returned an unimplemented code `{}'!", res_status);
                 return Err(anyhow!("Anilist returned an unimplemented response code!"));
             }
@@ -130,15 +137,16 @@ where
     ))
 }
 
-pub fn query_user(cfg: &mut MendoConfig) -> Result<QueryResponse<ViewerResponse>> {
+pub fn query_user(cfg: &mut MendoConfig, client: &Client) -> Result<QueryResponse<ViewerResponse>> {
     info!("Querying for info of currently authenticated user...");
-    query_graphql(QUERY_USER, &None, cfg)
+    query_graphql(QUERY_USER, &None, cfg, &client, true)
 }
 
 pub fn search_media(
     cfg: &mut MendoConfig,
     search_string: &str,
     media_type: MediaType,
+    client: &Client,
 ) -> Result<QueryResponse<MediaResponse>> {
     let variables = json!({
         "search": search_string,
@@ -151,7 +159,7 @@ pub fn search_media(
             "Searching Media using name: `{}`, type: `{:?}`...",
             search_string, media_type
         );
-        query_graphql(SEARCH_MEDIA, &Some(variables), cfg)
+        query_graphql(SEARCH_MEDIA, &Some(variables), cfg, &client, false)
     } else {
         error!("Media list query variables is not a json object");
         Err(anyhow!("Media list query variables is not a json object"))
@@ -163,6 +171,7 @@ pub fn query_media_list(
     user_id: i32,
     media_id: i32,
     media_type: MediaType,
+    client: &Client,
 ) -> Result<QueryResponse<MediaListResponse>> {
     let variables = json!({
         "userId": user_id,
@@ -176,7 +185,7 @@ pub fn query_media_list(
             "Querying MediaList for progress using media ID: `{}`, type: `{:?}` of user...",
             media_id, media_type
         );
-        query_graphql(QUERY_MEDIA_LIST, &Some(variables), cfg)
+        query_graphql(QUERY_MEDIA_LIST, &Some(variables), cfg, &client, false)
     } else {
         error!("Media list query variables is not a json object");
         Err(anyhow!("Media list query variables is not a json object"))
@@ -187,6 +196,7 @@ pub fn update_media(
     cfg: &mut MendoConfig,
     entry_id: i32,
     progress: i32,
+    client: &Client,
 ) -> Result<QueryResponse<SaveMediaListEntry>> {
     let variables = json!({
         "id": entry_id,
@@ -198,7 +208,7 @@ pub fn update_media(
             "Updating progress of title which has entry ID: `{}` with: progress `{}` for user...",
             entry_id, progress
         );
-        query_graphql(UPDATE_MEDIA, &Some(variables), cfg)
+        query_graphql(UPDATE_MEDIA, &Some(variables), cfg, &client, true)
     } else {
         error!("Media list query variables is not a json object");
         Err(anyhow!("Media list query variables is not a json object"))
@@ -210,6 +220,7 @@ pub fn create_new_entry(
     media_id: i32,
     status: MediaListStatus,
     progress: i32,
+    client: &Client,
 ) -> Result<QueryResponse<SaveMediaListEntry>> {
     //the Result here has None fields, aka useless
     let variables = json!({
@@ -222,7 +233,7 @@ pub fn create_new_entry(
         info!("Creating entry for title which has media ID: `{}` with: status `{:?}`, progress `{}` for user...",
             media_id, status, progress
         );
-        query_graphql(UPDATE_MEDIA, &Some(variables), cfg)
+        query_graphql(UPDATE_MEDIA, &Some(variables), cfg, &client, true)
     } else {
         error!("Media list query variables is not a json object");
         Err(anyhow!("Media list query variables is not a json object"))

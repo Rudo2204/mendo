@@ -1,11 +1,12 @@
 use anyhow::{anyhow, Result};
 use clap::{crate_authors, crate_description, crate_version, App, AppSettings, Arg};
 use fs2::FileExt;
+use reqwest::blocking::Client;
 use std::{fs::File, io};
 
 use chrono::{Local, Utc};
 use fern::colors::{Color, ColoredLevelConfig};
-use log::{debug, error, info, warn, LevelFilter};
+use log::{debug, error, info, LevelFilter};
 
 mod anilist;
 mod util;
@@ -161,14 +162,17 @@ fn main() -> Result<()> {
 
     if let Some(update_matches) = matches.subcommand_matches("update") {
         info!("Token from config file is valid. Let's get to work!");
-        let user_id = util::get_user_id(&mut mendo_cfg, &data_dir)?;
+        // Reuse a single client to take advantage of keep-alive connection pooling
+        let client = Client::new();
+        let user_id = util::get_user_id(&mut mendo_cfg, &data_dir, &client)?;
         let filename = update_matches
             .value_of("filename")
             .expect("Safe because of clap handling");
-        let media_id = util::get_media_id(&mut mendo_cfg, &data_dir, &filename)?;
-        let (entry_id, progress) = util::get_eid_and_progress(&mut mendo_cfg, user_id, media_id)?;
+        let media_id = util::get_media_id(&mut mendo_cfg, &data_dir, &filename, &client)?;
+        let (entry_id, progress) =
+            util::get_eid_and_progress(&mut mendo_cfg, user_id, media_id, &client)?;
 
-        request::update_media(&mut mendo_cfg, entry_id, progress + 1)?;
+        request::update_media(&mut mendo_cfg, entry_id, progress + 1, &client)?;
 
         #[cfg(target_family = "unix")]
         util::notify_updated(&filename, progress + 1)?;
