@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Result};
 use clap::{crate_authors, crate_description, crate_version, App, AppSettings, Arg};
-use std::io;
+use fs2::FileExt;
+use std::{fs::File, io};
 
 use chrono::{Local, Utc};
 use fern::colors::{Color, ColoredLevelConfig};
@@ -57,7 +58,7 @@ fn setup_logging(verbosity: u64) -> Result<()> {
                 ),
             ))
         })
-        .chain(fern::log_file(log_file_path.into_os_string())?);
+        .chain(fern::log_file(log_file_path)?);
 
     // For stdout output we will just output local %H:%M:%S
     let stdout_config = fern::Dispatch::new()
@@ -119,6 +120,11 @@ fn main() -> Result<()> {
     setup_logging(verbosity)?;
     debug!("-----Logger is initialized. Starting main program!-----");
 
+    let log_file_path =
+        util::get_data_dir("", "", PROGRAM_NAME)?.join(format!("{}.log", PROGRAM_NAME));
+    let log_file = File::open(log_file_path)?;
+    log_file.lock_exclusive()?;
+
     let conf_file = util::get_conf_dir("", "", PROGRAM_NAME)?;
     while !conf_file.exists() {
         util::create_proj_conf("", "", PROGRAM_NAME)?;
@@ -160,5 +166,6 @@ fn main() -> Result<()> {
     }
 
     debug!("-----Everything is finished!-----");
+    log_file.unlock()?;
     Ok(())
 }

@@ -25,6 +25,8 @@ chrono = "0.4"
 yaml-rust = "0.4.4"
 serde_yaml = "0.8.13"
 xkcd_unreachable = "0.1.1"
+fs2 = "0.4.3"
+
 [target.'cfg(unix)'.dependencies]
 notify-rust = "4"
 
