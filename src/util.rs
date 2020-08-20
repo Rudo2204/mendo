@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Result};
 use directories::ProjectDirs;
 use log::{debug, error, info};
+use notify_rust::{Notification, NotificationHandle};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::fs::{self, File, OpenOptions};
@@ -128,7 +129,7 @@ pub fn get_user_id(mut cfg: &mut MendoConfig, data_dir: &PathBuf) -> Result<i32>
     Ok(user_id)
 }
 
-pub fn get_manga_name(filename: &str) -> Result<&str> {
+fn get_manga_name(filename: &str) -> Result<&str> {
     let name_re = Regex::new(r"^(.*) v?(\d+)").expect("this is safe");
     let caps = match name_re.captures(filename) {
         Some(cap) => cap,
@@ -140,6 +141,15 @@ pub fn get_manga_name(filename: &str) -> Result<&str> {
         }
     };
     Ok(caps.get(1).map_or_else(|| "", |m| m.as_str()))
+}
+
+#[cfg(target_family = "unix")]
+pub fn notify_updated(filename: &str, progress: i32) -> Result<NotificationHandle> {
+    let name = get_manga_name(&filename)?;
+    Ok(Notification::new()
+        .appname("mendo")
+        .summary(format!("Updated manga `{}` with progress `{}`", name, progress + 1).as_str())
+        .show()?)
 }
 
 pub fn get_media_id(mut cfg: &mut MendoConfig, data_dir: &PathBuf, filename: &str) -> Result<i32> {

@@ -154,6 +154,9 @@ fn main() -> Result<()> {
         let (entry_id, progress) = util::get_eid_and_progress(&mut mendo_cfg, user_id, media_id)?;
 
         request::update_media(&mut mendo_cfg, entry_id, progress + 1)?;
+
+        #[cfg(target_family = "unix")]
+        util::notify_updated(&filename, progress + 1)?;
     }
 
     debug!("-----Everything is finished!-----");
