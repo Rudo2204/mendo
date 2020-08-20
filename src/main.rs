@@ -95,7 +95,16 @@ fn main() -> Result<()> {
         .version(crate_version!())
         .author(crate_authors!())
         .about(crate_description!())
-        .subcommand(App::new("auth").about("Authorizes mendo to update progress"))
+        .subcommand(
+            App::new("auth")
+                .arg(
+                    Arg::with_name("force")
+                        .short("f")
+                        .long("force")
+                        .help("force reauthorize flag"),
+                )
+                .about("Authorizes mendo to update progress"),
+        )
         .subcommand(
             App::new("update").about("Updates manga progress").arg(
                 Arg::with_name("filename")
@@ -130,22 +139,23 @@ fn main() -> Result<()> {
     }
 
     let mut mendo_cfg: MendoConfig = confy::load(PROGRAM_NAME)?;
-    if matches.is_present("auth") {
+    if let Some(auth_matches) = matches.subcommand_matches("auth") {
         debug!("Config file loaded. Checking for auth status...");
         if !mendo_cfg.ready_to_auth() {
             println!(
             "You need to edit information in the config file first before we can authorize you."
-        );
+            );
             println!("Mendo's config file is located at {}", conf_file.display());
             error!("One or more fields in conf file has not been edited. Exiting...");
             return Err(anyhow!(
                 "One or more fields in conf file has not been edited!"
             ));
-        } else if !mendo_cfg.access_token_is_valid() {
-            warn!("Access token is invalid. Starting authorization process...");
+        } else if !mendo_cfg.access_token_is_valid() || auth_matches.is_present("force") {
+            info!("Starting authorization process...");
             println!("Starting authorization process...");
             let res_token = oauth::auth(&mut mendo_cfg)?;
             util::cfg_save_token(PROGRAM_NAME, &mut mendo_cfg, &res_token)?;
+            println!("Authorization process finished. Now you can use `update` subcommand!");
         }
     }
 
