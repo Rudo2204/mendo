@@ -118,12 +118,11 @@ fn main() -> Result<()> {
 
     util::create_data_dir(&data_dir)?;
     setup_logging(verbosity)?;
-    debug!("-----Logger is initialized. Starting main program!-----");
-
     let log_file_path =
         util::get_data_dir("", "", PROGRAM_NAME)?.join(format!("{}.log", PROGRAM_NAME));
     let log_file = File::open(log_file_path)?;
     log_file.lock_exclusive()?;
+    debug!("-----Logger is initialized. Starting main program!-----");
 
     let conf_file = util::get_conf_dir("", "", PROGRAM_NAME)?;
     while !conf_file.exists() {
