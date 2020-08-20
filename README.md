@@ -21,25 +21,26 @@ So there are two solutions to this:
 
 ## Mendo help page
 ```
-mendo 0.1.0
+mendo 0.2.0
 Rudo2204 <rudo2204@gmail.com>
 A CLI program to update manga progress
 
 USAGE:
-    mendo [FLAGS] <filename>
+    mendo [FLAGS] [SUBCOMMAND]
 
 FLAGS:
     -h, --help       Prints help information
     -V, --version    Prints version information
     -v, --verbose    Sets the level of debug information verbosity
 
-ARGS:
-    <filename>    the filename of manga archive
+SUBCOMMANDS:
+    auth      Authorizes mendo to update progress
+    update    Updates manga progress
 ```
 
 ## Authorization process
 You will need to authorize `mendo` to update your process.\
-First, start `mendo` up (just put in some random filename as args), it will create a new config yaml file in your configuration directory. Refer to the table below.
+First start `mendo auth`, it will create a new config yaml file in your configuration directory. Refer to the table below.
 
 | Platform | Value                                         | Example                                        |
 |----------|-----------------------------------------------|------------------------------------------------|
@@ -55,7 +56,7 @@ Then the final step is to start `mendo` up again to kick start your authorizatio
 
 ## How to integrate with MComix
 Open MComix, File -> Open with -> Edit commands. Add a new external command, call it whatever you want.\
-And the command would be `/path/to/mendo %a`. You can add a some `-v` to increase debug information logged to your data directory. You should find a directory named `mendo` in there. Refer to the table below.
+And the command would be `/path/to/mendo update %a`. You can add a some `-v` to increase debug information logged to your data directory. You should find a directory named `mendo` in there. Refer to the table below.
 
 | Platform | Value                                            | Example                                        |
 |----------|--------------------------------------------------|------------------------------------------------|
