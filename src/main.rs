@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use clap::{crate_authors, crate_description, crate_version, App, AppSettings, Arg};
 use fs2::FileExt;
 use reqwest::blocking::Client;
@@ -6,7 +6,7 @@ use std::{fs::File, io};
 
 use chrono::{Local, Utc};
 use fern::colors::{Color, ColoredLevelConfig};
-use log::{debug, error, info, LevelFilter};
+use log::{debug, info, LevelFilter};
 
 mod anilist;
 mod util;
@@ -152,16 +152,7 @@ fn main() -> Result<()> {
     let mut mendo_cfg: MendoConfig = confy::load(PROGRAM_NAME)?;
     if let Some(auth_matches) = matches.subcommand_matches("auth") {
         debug!("Config file loaded. Checking for auth status...");
-        if !mendo_cfg.ready_to_auth() {
-            println!(
-            "You need to edit information in the config file first before we can authorize you."
-            );
-            println!("Mendo's config file is located at {}", conf_file.display());
-            error!("One or more fields in conf file has not been edited. Exiting...");
-            return Err(anyhow!(
-                "One or more fields in conf file has not been edited!"
-            ));
-        } else if !mendo_cfg.access_token_is_valid() || auth_matches.is_present("force") {
+        if !mendo_cfg.access_token_is_valid() || auth_matches.is_present("force") {
             info!("Starting authorization process...");
             println!("Starting authorization process...");
             let res_token = oauth::auth(&mut mendo_cfg)?;

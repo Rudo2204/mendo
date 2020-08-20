@@ -73,16 +73,7 @@ where
                 debug!("Deleting the existing token to force user to reauth...");
                 let user_profile_path = util::get_data_dir("", "", PROGRAM_NAME)?.join("user.yml");
                 remove_file(&user_profile_path)?;
-                confy::store(
-                    PROGRAM_NAME,
-                    MendoConfig {
-                        id: cfg.id,
-                        secret: cfg.secret.to_string(),
-                        name: cfg.name.to_string(),
-                        url: cfg.url.to_string(),
-                        token: "Leave this field.".to_string(),
-                    },
-                )?;
+                confy::store(PROGRAM_NAME, MendoConfig::default())?;
                 return Err(anyhow!("Unthorized! Run the program again to reauthorize!"));
             }
             // This could happen in two situations:

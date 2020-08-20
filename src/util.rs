@@ -35,9 +35,9 @@ pub struct MendoConfig {
 impl Default for MendoConfig {
     fn default() -> Self {
         MendoConfig {
-            id: 0,
-            secret: "Edit this!".to_string(),
-            name: "Edit this!".to_string(),
+            id: 3891,
+            secret: "ASEXk9zRXXkpbXSrzxNn89fuGDyiVmS3qkszaUXb".to_string(),
+            name: "mendo".to_string(),
             url: "http://localhost:8080/callback".to_string(),
             token: "Leave this field.".to_string(),
         }
@@ -47,10 +47,6 @@ impl Default for MendoConfig {
 impl MendoConfig {
     pub fn access_token_is_valid(&mut self) -> bool {
         self.token != "Leave this field."
-    }
-
-    pub fn ready_to_auth(&mut self) -> bool {
-        !(self.id == 0 || self.secret == "Edit this!" || self.name == "Edit this!")
     }
 }
 
