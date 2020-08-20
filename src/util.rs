@@ -178,11 +178,7 @@ pub fn get_media_id(mut cfg: &mut MendoConfig, data_dir: &PathBuf, filename: &st
                     append_local_data(&local_media_data, name, media_id)?;
                     Ok(media_id)
                 }
-                None => {
-                    // the program should never reach this state!
-                    error!("Could not get ids from querying API!");
-                    Err(anyhow!("Could not get ids from querying API!"))
-                }
+                None => xkcd_unreachable::xkcd_unreachable!(),
             }
         }
     }
@@ -210,10 +206,6 @@ pub fn get_eid_and_progress(
             media_list_resp.media_list.entry_id,
             media_list_resp.media_list.progress,
         )),
-        None => {
-            // the program should never reach this state!
-            error!("Could not get progress from querying API!");
-            Err(anyhow!("Could not get progress from querying API!"))
-        }
+        None => xkcd_unreachable::xkcd_unreachable!(),
     }
 }
