@@ -11,7 +11,7 @@ use crate::util::MendoConfig;
 pub fn auth(cfg: &mut MendoConfig) -> Result<String> {
     let client_id = &cfg.id.to_string();
     let client_secret = &cfg.secret;
-    let redirect_uri = &cfg.url;
+    let redirect_uri = &cfg.url.to_string();
     let state = CsrfToken::new_random().secret().to_string();
 
     let url = Url::parse_with_params(

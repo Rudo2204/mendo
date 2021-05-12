@@ -4,6 +4,7 @@ use log::{debug, error, info};
 use regex::Regex;
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
 use std::fs::{self, File, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -24,27 +25,27 @@ struct AnilistToken<'a> {
 
 // have to use String here because of how Confy serdes the structs
 #[derive(Serialize, Deserialize, Debug)]
-pub struct MendoConfig {
+pub struct MendoConfig<'a> {
     pub id: i32,
-    pub secret: String,
-    pub name: String,
-    pub url: String,
-    pub token: String,
+    pub secret: Cow<'a, str>,
+    pub name: Cow<'a, str>,
+    pub url: Cow<'a, str>,
+    pub token: Cow<'a, str>,
 }
 
-impl Default for MendoConfig {
+impl Default for MendoConfig<'_> {
     fn default() -> Self {
         MendoConfig {
             id: 3891,
-            secret: "ASEXk9zRXXkpbXSrzxNn89fuGDyiVmS3qkszaUXb".to_string(),
-            name: "mendo".to_string(),
-            url: "http://localhost:8080/callback".to_string(),
-            token: "Leave this field.".to_string(),
+            secret: Cow::Borrowed("ASEXk9zRXXkpbXSrzxNn89fuGDyiVmS3qkszaUXb"),
+            name: Cow::Borrowed("mendo"),
+            url: Cow::Borrowed("http://localhost:8080/callback"),
+            token: Cow::Borrowed("Leave this field."),
         }
     }
 }
 
-impl MendoConfig {
+impl MendoConfig<'_> {
     pub fn access_token_is_valid(&mut self) -> bool {
         self.token != "Leave this field."
     }
@@ -87,11 +88,11 @@ pub fn create_proj_conf(qualifier: &str, organization: &str, application: &str) 
     Ok(())
 }
 
-pub fn cfg_save_token(
+pub fn cfg_save_token<'a>(
     application: &str,
-    cfg: &mut MendoConfig,
-    res_token: &str,
-) -> Result<MendoConfig> {
+    cfg: &'a mut MendoConfig,
+    res_token: &'a str,
+) -> Result<MendoConfig<'a>> {
     let anilist_token: AnilistToken = serde_json::from_str(&res_token)?;
     debug!("Deserialized anilist token:\n{:#?}\n", anilist_token);
 
@@ -100,10 +101,10 @@ pub fn cfg_save_token(
 
     let cfg_with_token = MendoConfig {
         id: cfg.id,
-        secret: client_secret.to_string(),
-        name: client_name.to_string(),
-        url: "http://localhost:8080/callback".to_string(),
-        token: anilist_token.access_token.to_string(),
+        secret: Cow::Borrowed(client_secret),
+        name: Cow::Borrowed(client_name),
+        url: Cow::Borrowed("http://localhost:8080/callback"),
+        token: Cow::Borrowed(anilist_token.access_token),
     };
     confy::store(&application, None, &cfg_with_token)?;
 
