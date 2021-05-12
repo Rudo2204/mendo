@@ -6,7 +6,7 @@ use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
 use std::fs::{self, File, OpenOptions};
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::anilist::model::{MediaType, User};
 use crate::anilist::request;
@@ -62,7 +62,7 @@ pub fn get_data_dir(qualifier: &str, organization: &str, application: &str) -> R
     Ok(proj_dirs.data_dir().to_path_buf())
 }
 
-pub fn create_data_dir(data_dir: &PathBuf) -> Result<()> {
+pub fn create_data_dir(data_dir: &Path) -> Result<()> {
     if !data_dir.exists() {
         debug!("Project data dir does not exist, creating them...");
         std::fs::create_dir_all(data_dir)?;
@@ -81,7 +81,7 @@ pub fn create_proj_conf(qualifier: &str, organization: &str, application: &str) 
         &application,
         conf_dir.display()
     );
-    confy::store(&application, MendoConfig::default())?;
+    confy::store(&application, None, MendoConfig::default())?;
     debug!("Default config file saved.");
 
     Ok(())
@@ -105,13 +105,13 @@ pub fn cfg_save_token(
         url: "http://localhost:8080/callback".to_string(),
         token: anilist_token.access_token.to_string(),
     };
-    confy::store(&application, cfg_with_token.clone())?;
+    confy::store(&application, None, cfg_with_token.clone())?;
 
     info!("Configuration with access token is saved!");
     Ok(cfg_with_token)
 }
 
-pub fn get_user_id(mut cfg: &mut MendoConfig, data_dir: &PathBuf, client: &Client) -> Result<i32> {
+pub fn get_user_id(mut cfg: &mut MendoConfig, data_dir: &Path, client: &Client) -> Result<i32> {
     let user_profile_path = data_dir.join("user.yml");
     if !user_profile_path.exists() {
         debug!("Local user profile does not exist. Querying to create one...");
@@ -154,7 +154,7 @@ pub fn notify_updated(filename: &str, pattern: &str, progress: i32) -> Result<No
 
 pub fn get_media_id(
     mut cfg: &mut MendoConfig,
-    data_dir: &PathBuf,
+    data_dir: &Path,
     filename: &str,
     pattern: &str,
     client: &Client,
@@ -210,7 +210,7 @@ pub fn get_media_id(
     }
 }
 
-fn append_local_data(path: &PathBuf, name: &str, media_id: i32) -> Result<()> {
+fn append_local_data(path: &Path, name: &str, media_id: i32) -> Result<()> {
     let mut file = OpenOptions::new().append(true).open(&path)?;
     writeln!(file, "{} - mediaId: {}", name, media_id)?;
     debug!(

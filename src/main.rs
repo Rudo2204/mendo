@@ -152,13 +152,13 @@ fn main() -> Result<()> {
         util::create_proj_conf("", "", PROGRAM_NAME)?;
     }
 
-    let mut mendo_cfg: MendoConfig = confy::load(PROGRAM_NAME)?;
+    let mut mendo_cfg: MendoConfig = confy::load(PROGRAM_NAME, None)?;
     if let Some(auth_matches) = matches.subcommand_matches("auth") {
         if auth_matches.is_present("force") {
             debug!("Force flag is present. Deleting user.yml and token in config file...");
             remove_file(data_dir.join("user.yml"))?;
             debug!("user.yml file in data directory has been deleted.");
-            confy::store(PROGRAM_NAME, MendoConfig::default())?;
+            confy::store(PROGRAM_NAME, None, MendoConfig::default())?;
             debug!("Config file has been overridden with default values.");
         } else if !mendo_cfg.access_token_is_valid() {
             debug!("Token is invalid...");

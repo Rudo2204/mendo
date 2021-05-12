@@ -25,7 +25,6 @@ pub fn query_graphql<R>(
 ) -> Result<QueryResponse<R>>
 where
     R: DeserializeOwned + std::fmt::Debug,
-    // Need DeserializeOwned because of how reqwest deserializes the response.
 {
     let query = if let Some(vars) = &variables {
         json!({ "query": query_str, "variables": vars })
@@ -73,7 +72,7 @@ where
                 debug!("Deleting the existing token to force user to reauth...");
                 let user_profile_path = util::get_data_dir("", "", PROGRAM_NAME)?.join("user.yml");
                 remove_file(&user_profile_path)?;
-                confy::store(PROGRAM_NAME, MendoConfig::default())?;
+                confy::store(PROGRAM_NAME, None, MendoConfig::default())?;
                 return Err(anyhow!("Unthorized! Run the program again to reauthorize!"));
             }
             // This could happen in two situations:
@@ -94,13 +93,9 @@ where
                         debug!("Got media_id `{}` from variables", media_id);
                         create_new_entry(cfg, media_id, MediaListStatus::Current, 0, client)?;
                         info!("Will now retry to query MediaList...");
-                        return Ok(query_graphql(
-                            QUERY_MEDIA_LIST,
-                            &variables,
-                            cfg,
-                            &client,
-                            false,
-                        )?);
+                        let result =
+                            query_graphql(QUERY_MEDIA_LIST, &variables, cfg, &client, false)?;
+                        return Ok(result);
                     // This is the 2ns situation AKA when using search_media
                     } else {
                         error!("The API did not return any result! Maybe recheck your archive filename?");

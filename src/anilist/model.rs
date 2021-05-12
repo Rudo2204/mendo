@@ -3,7 +3,7 @@ use log::debug;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::Path;
 use yaml_rust::{YamlEmitter, YamlLoader};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -16,7 +16,7 @@ pub struct User {
 }
 
 impl User {
-    pub fn dump_user_info(&self, path: &PathBuf) -> Result<()> {
+    pub fn dump_user_info(&self, path: &Path) -> Result<()> {
         let s = serde_yaml::to_string(&self)?;
         let docs = YamlLoader::load_from_str(&s)?;
         let doc = &docs[0];
