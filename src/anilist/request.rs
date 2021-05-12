@@ -110,6 +110,8 @@ where
                 return Ok(response);
             }
             _ => {
+                let response: QueryResponse<R> = res.json()?;
+                debug!("Response =\n{:#?}", response);
                 error!("Anilist returned an unimplemented code `{}'!", res_status);
                 return Err(anyhow!("Anilist returned an unimplemented response code!"));
             }
