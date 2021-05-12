@@ -21,7 +21,7 @@ So there are two solutions to this:
 
 ## Mendo help page
 ```
-mendo 0.2.0
+mendo 0.2.1
 Rudo2204 <rudo2204@gmail.com>
 A CLI program to update manga progress
 

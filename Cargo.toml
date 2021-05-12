@@ -1,6 +1,6 @@
 [package]
 name = "mendo"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Rudo2204 <rudo2204@gmail.com>"]
 edition = "2018"
 description = "A CLI program to update manga progress"
@@ -17,7 +17,7 @@ open = "1"
 url = "2"
 anyhow = "1"
 directories = "3"
-confy = { git = "https://github.com/rust-cli/confy.git", default-features = false, features = ["yaml_conf"] }
+confy = { git = "https://github.com/rust-cli/confy", default-features = false, features = ["yaml_conf"] }
 log = "0.4"
 fern = { version = "0.6", features = ["colored"] }
 clap = "2.33"
