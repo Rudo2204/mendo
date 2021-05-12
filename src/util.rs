@@ -23,7 +23,7 @@ struct AnilistToken<'a> {
 }
 
 // have to use String here because of how Confy serdes the structs
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct MendoConfig {
     pub id: i32,
     pub secret: String,
@@ -105,7 +105,7 @@ pub fn cfg_save_token(
         url: "http://localhost:8080/callback".to_string(),
         token: anilist_token.access_token.to_string(),
     };
-    confy::store(&application, None, cfg_with_token.clone())?;
+    confy::store(&application, None, &cfg_with_token)?;
 
     info!("Configuration with access token is saved!");
     Ok(cfg_with_token)
